@@ -35,7 +35,6 @@
 //     const reserves = await pairContract.getReserves();
 //     console.log(reserves);
 // }
-<<<<<<< HEAD
 
 // // Function to calculate slippage
 // function calculateSlippage(amountIn, reserveIn, reserveOut) {
@@ -45,17 +44,6 @@
 //     return amountOut; // This returns the expected output amount, not the slippage percentage
 // }
 
-=======
-
-// // Function to calculate slippage
-// function calculateSlippage(amountIn, reserveIn, reserveOut) {
-//     // Simplified formula: (amountIn * reserveOut) / (reserveIn + amountIn)
-//     // This does not account for transaction fees or other in-depth factors
-//     const amountOut = (amountIn * reserveOut) / (reserveIn + amountIn);
-//     return amountOut; // This returns the expected output amount, not the slippage percentage
-// }
-
->>>>>>> e5cc2fa11be8a31882840351d117a381bec6f626
 // // Example usage
 // const tokenA = "0x..."; // Replace with actual tokenA address
 // const tokenB = "0x..."; // Replace with actual tokenB address
@@ -67,31 +55,21 @@
 // // console.log(slippageAmount);
 
 
-<<<<<<< HEAD
 
 
 import { ethers } from 'ethers';
+require('dotenv').config();
+
+
+
+// Replace 'rinkeby' with your network of choice: mainnet, ropsten, etc.
+const network = 'rinkeby';
+const providerUrl = `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`;
+const provider = new ethers.providers.JsonRpcProvider(providerUrl);
 
 async function main() {
-    const provider = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/');
-=======
-import { ethers } from 'ethers';
-
-async function main() {
-    const provider = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/1b21b86ebb1c4aee8048fb612a51126e');
->>>>>>> e5cc2fa11be8a31882840351d117a381bec6f626
     const blockNumber = await provider.getBlockNumber();
-    const currentTime = new Date().toLocaleTimeString(); // Gets the current time
-    console.log(`Current block number on mainet: ${blockNumber}`);
-    console.log(`Current time: ${currentTime}`);
-    console.log(`Current block number: ${blockNumber}`);
+    console.log(`Current block number on ${network}: ${blockNumber}`);
 }
 
-<<<<<<< HEAD
-// To use calculateSlippage, you'll need the reserve amounts and input amount, for example:
-// let amountIn = ethers.utils.parseUnits("1", 18); // 1 token, assuming 18 decimal places
-// let slippageAmount = calculateSlippage(amountIn, reserveIn, reserveOut);
-// console.log(slippageAmount);
-=======
->>>>>>> e5cc2fa11be8a31882840351d117a381bec6f626
 main().catch(console.error);
