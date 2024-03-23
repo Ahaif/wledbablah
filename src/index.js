@@ -58,7 +58,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ethers_1 = require("ethers");
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
+<<<<<<< HEAD
         const provider = new ethers_1.ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/');
+=======
+        const provider = new ethers_1.ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/1b21b86ebb1c4aee8048fb612a51126e');
+>>>>>>> e5cc2fa11be8a31882840351d117a381bec6f626
         const blockNumber = yield provider.getBlockNumber();
         const currentTime = new Date().toLocaleTimeString(); // Gets the current time
         console.log(`Current block number on mainet: ${blockNumber}`);
@@ -66,8 +70,11 @@ function main() {
         console.log(`Current block number: ${blockNumber}`);
     });
 }
+<<<<<<< HEAD
 // To use calculateSlippage, you'll need the reserve amounts and input amount, for example:
 // let amountIn = ethers.utils.parseUnits("1", 18); // 1 token, assuming 18 decimal places
 // let slippageAmount = calculateSlippage(amountIn, reserveIn, reserveOut);
 // console.log(slippageAmount);
+=======
+>>>>>>> e5cc2fa11be8a31882840351d117a381bec6f626
 main().catch(console.error);
