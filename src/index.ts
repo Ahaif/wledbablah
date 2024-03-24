@@ -1,12 +1,11 @@
+import dotenv from 'dotenv';
 import { ethers } from "ethers";
 import { evaluateTrade } from './watcher';
-import dotenv from 'dotenv';
+
 
 dotenv.config();
 
 
-
-// import { JsonRpcProvider } from '@ethersproject/providers';
 
 // Since your .env has the full URL, you don't need to construct it again
 // console.log("INFURA_URL:", process.env.INFURA_URL);
@@ -21,8 +20,12 @@ async function main() {
     const amountIn = ethers.utils.parseEther("1"); // For 1 token, adjust as necessary
 
     console.log("Current time (ISO format):", new Date().toISOString());
+    try{
+        await evaluateTrade(tokenA, tokenB, amountIn);
+    }catch{
+        console.log("Error in Evaluate Trade");
+    }
     
-    await evaluateTrade(tokenA, tokenB, amountIn);
 }
 
 // async function main() {
@@ -32,4 +35,4 @@ async function main() {
 
 main().catch(console.error);
 
-// export { provider };
+

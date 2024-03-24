@@ -1,13 +1,18 @@
-import { ethers } from 'ethers';
+
 import dotenv from 'dotenv';
+import { ethers } from 'ethers';
+dotenv.config();
+
 // import { provider } from './index';
 
-dotenv.config();
+
 
 // Use the correct ABI array directly, assuming these imports now directly give you the ABI arrays
 import UniswapRouterAbi from './contracts/ABIs/UniswapRouter.json';
 import PairAbi from './contracts/ABIs/eth-dai.json';
 import UniswapFactoryAbi from './contracts/ABIs/UniswapFactory.json';
+
+
 
 const uniswapRouterAddress = "0x7a250d5630B4cF539739df2C5dAcb4c659F2488D";
 const uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
@@ -15,10 +20,7 @@ const uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
 const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
 
 
-
 // console.log("Provider:", provider);
-// console.log("uniSWAP Abi", UniswapFactoryAbi.result);
-
 
 
 // Initialize the router and factory contract instances
@@ -39,24 +41,40 @@ async function getReserves(pairAddress: string): Promise<ethers.BigNumber[]> {
 }
 
 // Simplified slippage calculation
-// function calculateSlippage(amountIn: ethers.BigNumber, reserveIn: ethers.BigNumber, reserveOut: ethers.BigNumber): ethers.BigNumber {
-//     return amountIn.mul(reserveOut).div(reserveIn.add(amountIn));
-// }
+function calculateSlippage(amountIn: ethers.BigNumber, reserveIn: ethers.BigNumber, reserveOut: ethers.BigNumber): ethers.BigNumber {
+    return amountIn.mul(reserveOut).div(reserveIn.add(amountIn));
+}
 
 // Function to evaluate a trading opportunity
 async function evaluateTrade(tokenA: string, tokenB: string, amountIn: ethers.BigNumber): Promise<void> {
     console.log("Token A:", tokenA);
     console.log("Token B:", tokenB);
-    const pairAddress = await getPairAddress(tokenA, tokenB);
-    if (pairAddress === ethers.constants.AddressZero) {
-        console.log("Pair not found.");
-        return;
+    try{
+        const pairAddress = await getPairAddress(tokenA, tokenB);
+        if (pairAddress === ethers.constants.AddressZero) {
+            console.log("Pair not found.");
+            return;
     }
     console.log("Pair address:", pairAddress);
     const [reserve0, reserve1] = await getReserves(pairAddress);
+    const reserve0Formatted = ethers.utils.formatUnits(reserve0, 18);
+    const reserve1Formatted = ethers.utils.formatUnits(reserve1, 18);
+    
+    console.log("Formatted Reserve  DAI:", reserve0Formatted);
+    console.log("Formatted Reserve  ETH:", reserve1Formatted);
     // Assuming tokenA corresponds to reserve0 and tokenB to reserve1 for simplicity, you might need to adjust based on actual token addresses
-    // const amountOutWithoutSlippage = calculateSlippage(amountIn, reserve0, reserve1);
+    const amountOutWithoutSlippage = calculateSlippage(amountIn, reserve0, reserve1);
     // console.log("Estimated amount out without slippage:", amountOutWithoutSlippage.toString());
+    const amoutWithoutSlippafeFormated = ethers.utils.formatUnits(amountOutWithoutSlippage, 18);
+    console.log("Estimated amount out without slippage:", amoutWithoutSlippafeFormated);
+    }catch(e){
+        console.log("Error in pair Address:", e);
+    }
+    
+  
+    
+    
+
 }
 
 export { getPairAddress, evaluateTrade };
