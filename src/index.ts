@@ -1,12 +1,16 @@
 import { ethers } from "ethers";
 import { evaluateTrade } from './watcher';
-require('dotenv').config();
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 
 
 // import { JsonRpcProvider } from '@ethersproject/providers';
 
 // Since your .env has the full URL, you don't need to construct it again
-const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
+console.log("INFURA_URL:", process.env.INFURA_URL);
+ const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
 
 
 
@@ -17,9 +21,15 @@ async function main() {
     const amountIn = ethers.utils.parseEther("1"); // For 1 token, adjust as necessary
 
     console.log("Current time (ISO format):", new Date().toISOString());
-    console.log("Current time (Unix timestamp):", Date.now());
-
+    
     await evaluateTrade(tokenA, tokenB, amountIn);
 }
 
+// async function main() {
+//     const blockNumber = await provider.getBlockNumber();
+//     console.log("Current block number:", blockNumber);
+// }
+
 main().catch(console.error);
+
+export { provider };
