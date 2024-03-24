@@ -9,8 +9,8 @@ dotenv.config();
 // import { JsonRpcProvider } from '@ethersproject/providers';
 
 // Since your .env has the full URL, you don't need to construct it again
-console.log("INFURA_URL:", process.env.INFURA_URL);
- const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
+// console.log("INFURA_URL:", process.env.INFURA_URL);
+export const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
 
 
 
@@ -32,4 +32,4 @@ async function main() {
 
 main().catch(console.error);
 
-export { provider };
+// export { provider };
