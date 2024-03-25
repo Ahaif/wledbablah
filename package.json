@@ -9,9 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/ws": "^8.5.10",
     "bnc-sdk": "^4.6.8",
     "dotenv": "^16.4.5",
-    "ethers": "^5.4.3"
+    "ethers": "^5.4.3",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "truffle": "^5.11.5",

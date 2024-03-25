@@ -1,31 +1,37 @@
 import Mempool  from 'bnc-sdk';
+import { ethers } from 'ethers';
+import BlocknativeSdk from 'bnc-sdk'
+import SDK from 'bnc-sdk';
+import WebSocket from 'ws';
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
 
-// Initialize Blocknative SDK with your API key
-const blocknative = new Mempool({
-    apiKey: process.env.BLOCKNATIVE_API_KEY,
-    // dappId: process.env.BLOCKNATIVE_DAPP_ID, // Optional but recommended for analytics
-    networkId: 1, // Mainnet. Change according to your target network.
-    ws: WebSocket,
+const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
+
+// Initialize Blocknative SDK
+const blocknative = new SDK({
+  dappId: process.env.BLOCKNATIVE_DAPP_ID as string,
+  networkId: 1,
+  ws: WebSocket
 });
 
-// Function to start monitoring the mempool for transactions to Uniswap contracts
-export function startMonitoringUniswapTransactions(uniswapAddress: string): void {
-  // Specify criteria for the transactions you're interested in
-  // For example, transactions involving a specific Uniswap contract address
-  blocknative.on('pendingTransaction', (transaction) => {
-    // Check if the transaction is relevant (e.g., to or from Uniswap)
-    if (transaction.to === uniswapAddress || transaction.from === uniswapAddress) {
-      console.log(`Relevant transaction detected: ${transaction.hash}`);
-      // Add further processing logic here
+// Monitor transactions
+const startMonitoringMempool = () => {
+  console.log("Monitoring mempool for Uniswap transactions...");
+
+  // Replace 'YOUR_UNISWAP_CONTRACT_ADDRESS' with actual Uniswap contract address you are interested in
+  const uniswapContractAddress = 'YOUR_UNISWAP_CONTRACT_ADDRESS';
+
+  blocknative.on('pendingTransaction', (transaction: any) => {
+    // Check if transaction is relevant
+    if (transaction.to === uniswapContractAddress || transaction.from === uniswapContractAddress) {
+      console.log(`Transaction ${transaction.hash} involving Uniswap detected in mempool.`);
     }
   });
-
-  console.log('Started monitoring mempool for transactions involving Uniswap');
 }
+
+startMonitoringMempool();
 
 // Example usage
 // Replace 'YOUR_UNISWAP_CONTRACT_ADDRESS' with the actual contract address
