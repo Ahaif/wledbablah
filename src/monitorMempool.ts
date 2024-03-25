@@ -1,4 +1,4 @@
-import { Mempool } from '@blocknative/sdk';
+import Mempool  from 'bnc-sdk';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -6,9 +6,10 @@ dotenv.config();
 
 // Initialize Blocknative SDK with your API key
 const blocknative = new Mempool({
-  apiKey: process.env.BLOCKNATIVE_API_KEY, // Your Blocknative API Key
-  system: 'ethereum',
-  network: 'main' // Use 'rinkeby' for Rinkeby, etc.
+    apiKey: process.env.BLOCKNATIVE_API_KEY,
+    // dappId: process.env.BLOCKNATIVE_DAPP_ID, // Optional but recommended for analytics
+    networkId: 1, // Mainnet. Change according to your target network.
+    ws: WebSocket,
 });
 
 // Function to start monitoring the mempool for transactions to Uniswap contracts
