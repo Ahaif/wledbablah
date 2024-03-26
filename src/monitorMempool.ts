@@ -1,38 +1,45 @@
-import Mempool  from 'bnc-sdk';
-import { ethers } from 'ethers';
-import BlocknativeSdk from 'bnc-sdk'
-import SDK from 'bnc-sdk';
-import WebSocket from 'ws';
 import dotenv from 'dotenv';
+import BlocknativeSdk, { InitializationOptions, TransactionEvent, SDKError } from 'bnc-sdk';
+import WebSocket from 'ws'
 
 dotenv.config();
 
-const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
 
-// Initialize Blocknative SDK
-const blocknative = new SDK({
-  dappId: process.env.BLOCKNATIVE_DAPP_ID as string,
-  networkId: 1,
-  ws: WebSocket
-});
+dotenv.config();
 
-// Monitor transactions
-const startMonitoringMempool = () => {
-  console.log("Monitoring mempool for Uniswap transactions...");
+const uniswapAddress = '0x7a250d5630B4cF539739df2C5dAcb4c659F2488D'; // Uniswap V2 Router Mainnet Address
 
-  // Replace 'YOUR_UNISWAP_CONTRACT_ADDRESS' with actual Uniswap contract address you are interested in
-  const uniswapContractAddress = 'YOUR_UNISWAP_CONTRACT_ADDRESS';
 
-  blocknative.on('pendingTransaction', (transaction: any) => {
-    // Check if transaction is relevant
-    if (transaction.to === uniswapContractAddress || transaction.from === uniswapContractAddress) {
-      console.log(`Transaction ${transaction.hash} involving Uniswap detected in mempool.`);
-    }
+export function setupBlocknative() {
+  const apiKey = process.env.BLOCKNATIVE_DAPP_ID;
+  if (!apiKey) {
+      throw new Error('Please set your Blocknative API key in the environment variable BLOCKNATIVE_DAPP_ID.');
+  }
+
+  const options: InitializationOptions = {
+      dappId: apiKey,
+      networkId: 1, // Ethereum mainnet
+      system: 'ethereum',
+      ws: WebSocket,
+  };
+
+  const blocknative = new BlocknativeSdk(options);
+
+  // Watch the Uniswap address
+  const { emitter } = blocknative.account(uniswapAddress);
+
+  // Log initial account details for debugging/tracking
+  
+
+  // Register callback for transaction events, e.g., 'txPool'
+  emitter.on('txPool', (transaction) => {
+      console.log('Transaction in pool:', transaction);
   });
+
+  // Register more callbacks as needed based on the events you're interested in
+  emitter.on('txConfirmed', (transaction) => {
+      console.log('Transaction confirmed:', transaction);
+  });
+
+  console.log('Blocknative monitoring initiated for:', uniswapAddress);
 }
-
-startMonitoringMempool();
-
-// Example usage
-// Replace 'YOUR_UNISWAP_CONTRACT_ADDRESS' with the actual contract address
-// startMonitoringUniswapTransactions('YOUR_UNISWAP_CONTRACT_ADDRESS');

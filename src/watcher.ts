@@ -56,6 +56,7 @@ async function evaluateTrade(tokenA: string, tokenB: string, amountIn: ethers.Bi
             return;
     }
     console.log("Pair address:", pairAddress);
+    
     const [reserve0, reserve1] = await getReserves(pairAddress);
     const reserve0Formatted = ethers.utils.formatUnits(reserve0, 18);
     const reserve1Formatted = ethers.utils.formatUnits(reserve1, 18);
