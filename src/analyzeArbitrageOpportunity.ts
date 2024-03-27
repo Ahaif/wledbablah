@@ -11,7 +11,7 @@ const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH addre
 const UNISWAP_V2_ROUTER_ADDRESS = "0x7a250d5630B4cF539739df2C5dAcb4c659F2488D"; // Mainnet Router
 
 
-export async function analyzePotentialSandwich(transaction : any) {
+export async function analyzeArbitrageOpportunity(transaction : any) {
     if (!transaction || !transaction.contractCall) {
         console.log("Transaction is empty or does not involve a contract call.");
         return;
