@@ -1,11 +1,11 @@
 import dotenv from 'dotenv';
 import BlocknativeSdk, { InitializationOptions, TransactionEvent, SDKError } from 'bnc-sdk';
 import WebSocket from 'ws'
+import { analyzePotentialSandwich } from './checkSand';
 
 dotenv.config();
 
 
-dotenv.config();
 
 const uniswapAddress = '0x7a250d5630B4cF539739df2C5dAcb4c659F2488D'; // Uniswap V2 Router Mainnet Address
 
@@ -28,18 +28,22 @@ export function setupBlocknative() {
   // Watch the Uniswap address
   const { emitter } = blocknative.account(uniswapAddress);
 
-  // Log initial account details for debugging/tracking
   
-
   // Register callback for transaction events, e.g., 'txPool'
-  emitter.on('txPool', (transaction) => {
+  emitter.on('txPool', (transaction: any) => {
       console.log('Transaction in pool:', transaction);
+      try {
+          analyzePotentialSandwich(transaction);
+      } catch (e) {
+          console.error('Error analyzing potential sandwich:', e);
+      }
+
   });
 
   // Register more callbacks as needed based on the events you're interested in
-  emitter.on('txConfirmed', (transaction) => {
-      console.log('Transaction confirmed:', transaction);
-  });
+  // emitter.on('txConfirmed', (transaction) => {
+  //     console.log('Transaction confirmed:', transaction);
+  // });
 
   console.log('Blocknative monitoring initiated for:', uniswapAddress);
 }
