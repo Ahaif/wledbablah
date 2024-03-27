@@ -3,12 +3,9 @@ import dotenv from 'dotenv';
 import { ethers } from 'ethers';
 dotenv.config();
 
-// import { provider } from './index';
 
 
 
-// Use the correct ABI array directly, assuming these imports now directly give you the ABI arrays
-import UniswapRouterAbi from './contracts/ABIs/UniswapRouter.json';
 import PairAbi from './contracts/ABIs/eth-dai.json';
 import UniswapFactoryAbi from './contracts/ABIs/UniswapFactory.json';
 
@@ -20,30 +17,37 @@ const uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
 const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
 
 
-console.log("Provider:", provider);
+
+
+
 
 
 // Initialize the router and factory contract instances
 // const router = new ethers.Contract(uniswapRouterAddress, UniswapRouterAbi.result, provider);
 const factory = new ethers.Contract(uniswapFactoryAddress, UniswapFactoryAbi.result, provider);
+if(!factory){
+    console.log("Factory not found");
+}
 
 // Function to get the pair address
 async function getPairAddress(tokenA: string, tokenB: string): Promise<string> {
+    if(!provider){
+    console.log("Provider not found")};
     return await factory.getPair(tokenA, tokenB);
 }
 
 // Function to get reserves for a pair
-async function getReserves(pairAddress: string): Promise<ethers.BigNumber[]> {
-    const pairContract = new ethers.Contract(pairAddress, PairAbi.result, provider);
-    const reserves = await pairContract.getReserves();
-    console.log("Reserves:", reserves._reserve0.toString(), reserves._reserve1.toString());
-    return [reserves._reserve0, reserves._reserve1];
-}
+// async function getReserves(pairAddress: string): Promise<ethers.BigNumber[]> {
+//     const pairContract = new ethers.Contract(pairAddress, PairAbi.result, provider);
+//     const reserves = await pairContract.getReserves();
+//     console.log("Reserves:", reserves._reserve0.toString(), reserves._reserve1.toString());
+//     return [reserves._reserve0, reserves._reserve1];
+// }
 
 // Simplified slippage calculation
-function calculateSlippage(amountIn: ethers.BigNumber, reserveIn: ethers.BigNumber, reserveOut: ethers.BigNumber): ethers.BigNumber {
-    return amountIn.mul(reserveOut).div(reserveIn.add(amountIn));
-}
+// function calculateSlippage(amountIn: ethers.BigNumber, reserveIn: ethers.BigNumber, reserveOut: ethers.BigNumber): ethers.BigNumber {
+//     return amountIn.mul(reserveOut).div(reserveIn.add(amountIn));
+// }
 
 // Function to evaluate a trading opportunity
 async function evaluateTrade(tokenA: string, tokenB: string, amountIn: ethers.BigNumber): Promise<void> {
@@ -72,8 +76,8 @@ async function evaluateTrade(tokenA: string, tokenB: string, amountIn: ethers.Bi
         console.log("Error in pair Address:", e);
     }
     
-  
     
+  
     
 
 }

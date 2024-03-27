@@ -8,6 +8,8 @@ dotenv.config();
 
 // Assumed constants - replace with actual values or dynamic lookups as needed
 const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH address for ETH trades
+const UNISWAP_V2_ROUTER_ADDRESS = "0x7a250d5630B4cF539739df2C5dAcb4c659F2488D"; // Mainnet Router
+
 
 export async function analyzePotentialSandwich(transaction : any) {
     if (!transaction || !transaction.contractCall) {
@@ -15,6 +17,10 @@ export async function analyzePotentialSandwich(transaction : any) {
         return;
     }
 
+    if (transaction.to.toLowerCase() !== UNISWAP_V2_ROUTER_ADDRESS.toLowerCase()) {
+        console.log("Transaction does not involve Uniswap V2 Router.");
+        return;
+    }
     const targetMethodNames = ['swapExactTokensForETHSupportingFeeOnTransferTokens', 'swapExactTokensForTokens', 'swapExactETHForTokens'];
     if (!targetMethodNames.includes(transaction.contractCall.methodName)) {
         console.log(`Transaction method ${transaction.contractCall.methodName} is not targeted for analysis.`);

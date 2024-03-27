@@ -31,11 +31,12 @@ export function setupBlocknative() {
   
   // Register callback for transaction events, e.g., 'txPool'
   emitter.on('txPool', (transaction: any) => {
-      console.log('Transaction in pool:', transaction);
+    //   console.log('Transaction in pool:', transaction);
       try {
           analyzePotentialSandwich(transaction);
       } catch (e) {
-          console.error('Error analyzing potential sandwich:', e);
+        throw new Error('Error analyzing potential sandwich:');
+        //   console.error('Error analyzing potential sandwich:', e);
       }
 
   });
