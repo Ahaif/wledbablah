@@ -20,7 +20,7 @@ const uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
 const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
 
 
-// console.log("Provider:", provider);
+console.log("Provider:", provider);
 
 
 // Initialize the router and factory contract instances
@@ -57,17 +57,17 @@ async function evaluateTrade(tokenA: string, tokenB: string, amountIn: ethers.Bi
     }
     console.log("Pair address:", pairAddress);
     
-    const [reserve0, reserve1] = await getReserves(pairAddress);
-    const reserve0Formatted = ethers.utils.formatUnits(reserve0, 18);
-    const reserve1Formatted = ethers.utils.formatUnits(reserve1, 18);
+    // const [reserve0, reserve1] = await getReserves(pairAddress);
+    // const reserve0Formatted = ethers.utils.formatUnits(reserve0, 18);
+    // const reserve1Formatted = ethers.utils.formatUnits(reserve1, 18);
     
-    console.log("Formatted Reserve  DAI:", reserve0Formatted);
-    console.log("Formatted Reserve  ETH:", reserve1Formatted);
+    // console.log("Formatted Reserve  Token A:", reserve0Formatted);
+    // console.log("Formatted Reserve  Token B", reserve1Formatted);
     // Assuming tokenA corresponds to reserve0 and tokenB to reserve1 for simplicity, you might need to adjust based on actual token addresses
-    const amountOutWithoutSlippage = calculateSlippage(amountIn, reserve0, reserve1);
+    // const amountOutWithoutSlippage = calculateSlippage(amountIn, reserve0, reserve1);
     // console.log("Estimated amount out without slippage:", amountOutWithoutSlippage.toString());
-    const amoutWithoutSlippafeFormated = ethers.utils.formatUnits(amountOutWithoutSlippage, 18);
-    console.log("Estimated amount out without slippage:", amoutWithoutSlippafeFormated);
+    // const amoutWithoutSlippafeFormated = ethers.utils.formatUnits(amountOutWithoutSlippage, 18);
+    // console.log("Estimated amount out without slippage:", amoutWithoutSlippafeFormated);
     }catch(e){
         console.log("Error in pair Address:", e);
     }
