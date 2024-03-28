@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { ethers } from "ethers";
-import { evaluateTrade } from './watcher';
+
 import { setupBlocknative } from './monitorMempool';
 
 dotenv.config();

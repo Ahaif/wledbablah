@@ -1,49 +1,61 @@
-import dotenv from 'dotenv';
 import { ethers } from 'ethers';
-import BlocknativeSdk, { InitializationOptions, TransactionEvent, SDKError } from 'bnc-sdk';
-import WebSocket from 'ws'
-import { evaluateTrade } from './watcher';
-
+import dotenv from 'dotenv';
+import {compare_prices}  from './compare_prices';
 dotenv.config();
 
-// Assumed constants - replace with actual values or dynamic lookups as needed
-const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'; // WETH address for ETH trades
-const UNISWAP_V2_ROUTER_ADDRESS = "0x7a250d5630B4cF539739df2C5dAcb4c659F2488D"; // Mainnet Router
+// Constants and DEX Identifiers
+const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+export const DEX_IDENTIFIERS = {
+    UNISWAP: '0x7a250d5630B4cF539739df2C5dAcb4c659F2488D',
+    SUSHISWAP: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F', // Replace with actual SushiSwap router address
+};
 
 
-export async function analyzeArbitrageOpportunity(transaction : any) {
-    if (!transaction || !transaction.contractCall) {
-        console.log("Transaction is empty or does not involve a contract call.");
-        return;
-    }
 
-    if (transaction.to.toLowerCase() !== UNISWAP_V2_ROUTER_ADDRESS.toLowerCase()) {
-        console.log("Transaction does not involve Uniswap V2 Router.");
-        return;
-    }
-    const targetMethodNames = ['swapExactTokensForETHSupportingFeeOnTransferTokens', 'swapExactTokensForTokens', 'swapExactETHForTokens'];
-    if (!targetMethodNames.includes(transaction.contractCall.methodName)) {
-        console.log(`Transaction method ${transaction.contractCall.methodName} is not targeted for analysis.`);
-        return; 
-    }
 
+
+function parseTransactionDetails(transaction: any) {
     let tokenA, tokenB;
     let amountInBN = ethers.BigNumber.from("0");
 
-    // Determine tokens involved and amountIn
     if (transaction.contractCall.methodName === 'swapExactETHForTokens') {
-        tokenA = WETH_ADDRESS; // Use WETH as tokenA for ETH swaps
+        tokenA = WETH_ADDRESS;
         tokenB = transaction.contractCall.params.path[transaction.contractCall.params.path.length - 1];
-        amountInBN = ethers.BigNumber.from(transaction.value); // ETH amount is in the value field for these swaps
+        amountInBN = ethers.BigNumber.from(transaction.value);
     } else {
-        // For token to token swaps, extract from path
         tokenA = transaction.contractCall.params.path[0];
         tokenB = transaction.contractCall.params.path[transaction.contractCall.params.path.length - 1];
         amountInBN = ethers.BigNumber.from(transaction.contractCall.params.amountIn);
     }
+    const formattedTokenA  = ethers.utils.getAddress(tokenA);
+    const formattedTokenB = ethers.utils.getAddress(tokenB);
 
-    console.log(`Analyzing potential trade. Method: ${transaction.contractCall.methodName}, TokenA: ${tokenA}, TokenB: ${tokenB}, AmountIn: ${amountInBN.toString()}`);
-    
-    // Now, call evaluateTrade with the extracted values
-    await evaluateTrade(tokenA, tokenB, amountInBN).catch(console.error);
+    return { formattedTokenA, formattedTokenB, amountInBN };
 }
+
+export async function analyzeArbitrageOpportunity(transaction: any) {
+    const dexAddress = ethers.utils.getAddress(transaction.to);
+    if (!transaction || !transaction.contractCall) {
+        console.log("Transaction is empty, does not involve a contract call, or is not related to the monitored DEXes.");
+        return;
+    }
+
+    const targetMethodNames = ['swapExactTokensForETHSupportingFeeOnTransferTokens', 'swapExactTokensForTokens', 'swapExactETHForTokens'];
+    if (!targetMethodNames.includes(transaction.contractCall.methodName)) {
+        console.log(`Transaction method ${transaction.contractCall.methodName} is not targeted for analysis.`);
+        return;
+    }
+
+    // Extract token details and amount involved in the transaction
+    const { formattedTokenA, formattedTokenB, amountInBN } = parseTransactionDetails(transaction);
+
+    console.log(`Analyzing potential trade from DEX at ${dexAddress}.
+     Method: ${transaction.contractCall.methodName}, 
+     TokenA: ${formattedTokenA}, 
+     TokenB: ${formattedTokenB},
+     AmountIn: ${amountInBN.toString()}`);
+
+    // Call function to compare prices across DEXes, excluding the originating DEX
+    await compare_prices(formattedTokenA, formattedTokenB, amountInBN, dexAddress).catch(console.error);
+}
+

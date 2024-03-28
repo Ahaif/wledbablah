@@ -25,7 +25,7 @@ export function setupBlocknative() {
 
     // Setup to monitor both Uniswap and SushiSwap addresses
     const uniswapEmitter = blocknative.account(uniswapAddress);
-    const sushiSwapEmitter = blocknative.account(sushiSwapAddress);
+    // const sushiSwapEmitter = blocknative.account(sushiSwapAddress);
 
     // Generalized function to handle transaction events
     const handleTransactionEvent = (transaction: any) => {
@@ -40,7 +40,7 @@ export function setupBlocknative() {
     uniswapEmitter.emitter.on('txPool', handleTransactionEvent);
 
     // Register callback for transaction events for SushiSwap
-    sushiSwapEmitter.emitter.on('txPool', handleTransactionEvent);
+    // sushiSwapEmitter.emitter.on('txPool', handleTransactionEvent);
 
     console.log('Blocknative monitoring initiated for Uniswap and SushiSwap.');
 }
