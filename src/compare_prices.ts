@@ -2,7 +2,7 @@ import { BigNumber, ethers } from 'ethers';
 import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
 import SushiswapABI from './contracts/ABIs/SushiswapAbi.json';
 
-import { DEX_IDENTIFIERS } from './analyzeArbitrageOpportunity';
+import { DEX_IDENTIFIERS } from './constants';
 
 export async function compare_prices(tokenA: string, tokenB: string, amountIn: BigNumber, originatingDexAddress: string) {
     const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
