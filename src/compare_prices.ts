@@ -9,14 +9,16 @@ export async function compare_prices(tokenA: string, tokenB: string, amountIn: B
     // Iterate through DEX_IDENTIFIERS to compare prices, excluding the originating DEX
     try{
         for (const [dexName, dexAddress] of Object.entries(DEX_IDENTIFIERS)) {
+            console.log("Dex Name: ",dexName);
+            console.log("Dex Address: ",dexAddress);
             // if (dexAddress.toLowerCase() === originatingDexAddress) continue; // Skip the originating DEX
-            if(dexAddress.toLowerCase() === DEX_IDENTIFIERS.SUSHISWAP.toLowerCase()) {
+            if(originatingDexAddress.toLowerCase() === DEX_IDENTIFIERS.SUSHISWAP.toLowerCase()) {
                 console.log("---------------------------")
                 console.log("Skipping Sushiswap for now");
                 continue;
             }// Skip Sushiswap (for now
     
-            const price = await getPriceFromDex(dexAddress, tokenA, tokenB, amountIn);
+            const price = await getPriceFromDex(originatingDexAddress, tokenA, tokenB, amountIn);
             console.log(`${dexName} price for ${amountIn.toString()} of ${tokenA}: ${price.toString()}`);
         }
     }catch(e : any){
@@ -34,6 +36,12 @@ async function getPriceFromDex(dexAddress: string, tokenA: string, tokenB: strin
     try {
         // Call getAmountsOut with the amount of tokenA to get an estimate of tokenB returned
         const amountsOut = await router.getAmountsOut(amountIn, [tokenA, tokenB]);
+        if(amountsOut[1] === 0){
+            console.log("Amounts Out is 0");
+            console.log("No liquidity pool for this pair");
+            throw new Error("No liquidity pool for this pair");
+            
+        }
         return amountsOut[1]; // The amount of tokenB that you would get for your tokenA
     } catch (error) {
         console.error('Error fetching price from Uniswap V2:', error);
