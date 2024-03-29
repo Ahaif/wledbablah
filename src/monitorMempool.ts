@@ -6,7 +6,7 @@ import { analyzeArbitrageOpportunity } from './analyzeArbitrageOpportunity';
 dotenv.config();
 
 const uniswapAddress = '0x7a250d5630B4cF539739df2C5dAcb4c659F2488D'; // Uniswap V2 Router Mainnet Address
-const sushiSwapAddress = 'SushiSwap_Router_Address'; // Replace with SushiSwap Router Address
+const sushiSwapAddress = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'; // Replace with SushiSwap Router Address
 
 export function setupBlocknative() {
     const apiKey = process.env.BLOCKNATIVE_DAPP_ID;
@@ -25,7 +25,7 @@ export function setupBlocknative() {
 
     // Setup to monitor both Uniswap and SushiSwap addresses
     const uniswapEmitter = blocknative.account(uniswapAddress);
-    // const sushiSwapEmitter = blocknative.account(sushiSwapAddress);
+    const sushiSwapEmitter = blocknative.account(sushiSwapAddress);
 
     // Generalized function to handle transaction events
     const handleTransactionEvent = (transaction: any) => {
@@ -40,7 +40,7 @@ export function setupBlocknative() {
     uniswapEmitter.emitter.on('txPool', handleTransactionEvent);
 
     // Register callback for transaction events for SushiSwap
-    // sushiSwapEmitter.emitter.on('txPool', handleTransactionEvent);
+    sushiSwapEmitter.emitter.on('txPool', handleTransactionEvent);
 
     console.log('Blocknative monitoring initiated for Uniswap and SushiSwap.');
 }
