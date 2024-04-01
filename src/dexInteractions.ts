@@ -32,8 +32,8 @@ export async function fetchLiquidity(tokenA:string,tokenB: string) {
 
 
     // Use the getAmountsOut function
-    const amountIn = ethers.utils.parseEther("5"); // Example: 1 token
-    const amountsOut = await uniswapRouterContract.getAmountsOut(amountIn, [tokenAAddress, tokenBAddress]);
+    const amountIn = ethers.utils.parseEther("10"); // Example: 1 token
+    const amountsOut  = await uniswapRouterContract.getAmountsOut(amountIn, [tokenAAddress, tokenBAddress]);
 
     // Output the amounts for debugging
     console.log(`Liquidity for token ${tokenB}: ${ethers.utils.formatEther(amountsOut[1])}`);
@@ -56,7 +56,7 @@ export async function fetch_LiquiditySushiswap(tokenA:string,tokenB: string) {
 
 
     // Use the getAmountsOut function
-    const amountIn = ethers.utils.parseEther("5"); // Example: 1 token
+    const amountIn = ethers.utils.parseEther("10"); // Example: 1 token
     const amountsOut = await SushiswapRouterContract.getAmountsOut(amountIn, [tokenAAddress, tokenBAddress]);
 
     // Output the amounts for debugging
@@ -72,3 +72,44 @@ export async function fetch_LiquiditySushiswap(tokenA:string,tokenB: string) {
 
 }
 
+export async function calculateArbitrageProfit(amountOutUniswap: BigNumber, amountOutSushiswap: BigNumber) {
+
+    const amountOutUniswapBigNumber = ethers.BigNumber.from(amountOutUniswap.toString());
+    const amountOutSushiswapBigNumber = ethers.BigNumber.from(amountOutSushiswap.toString());
+
+
+    // Define slippage tolerance as 1%, for example
+    try{   
+        const slippageTolerance = 0.01; // 1%
+        const estimatedGasFeeUniswap = ethers.utils.parseEther("0.01"); // Example: 0.01 ETH
+        const estimatedGasFeeSushiswap = ethers.utils.parseEther("0.01"); // Example: 0.01 ETH
+
+
+        const slippageFactorUniswap = amountOutUniswapBigNumber.mul(100 - (slippageTolerance * 100)).div(100);
+        const slippageFactorSushiswap = amountOutSushiswapBigNumber.mul(100 - (slippageTolerance * 100)).div(100);
+        
+        const effectiveAmountOutUniswap = slippageFactorUniswap.sub(estimatedGasFeeUniswap);
+        const effectiveAmountOutSushiswap = slippageFactorSushiswap.sub(estimatedGasFeeSushiswap);
+
+        const potentialProfitSushiswap = effectiveAmountOutSushiswap.sub(effectiveAmountOutUniswap); // Sushiswap as target
+        const potentialProfitUniswap = effectiveAmountOutUniswap.sub(effectiveAmountOutSushiswap ); // Uniswap as target
+
+        console.log(`Potential Profit on Uniswap: ${ethers.utils.formatEther(potentialProfitUniswap)}`);
+        console.log(`Potential Profit on Sushiswap: ${ethers.utils.formatEther(potentialProfitSushiswap)}`);
+
+        
+
+    // Determine the most profitable scenario
+    if (potentialProfitSushiswap.gt(0) || potentialProfitUniswap.gt(0)) {
+        if (potentialProfitSushiswap.gt(potentialProfitUniswap)) {
+            console.log(`Profitable Arbitrage Opportunity on Sushiswap: ${ethers.utils.formatEther(potentialProfitSushiswap)}`);
+        } else {
+            console.log(`Profitable Arbitrage Opportunity on Uniswap: ${ethers.utils.formatEther(potentialProfitUniswap)}`);
+        }
+    } else {
+        console.log("No profitable arbitrage opportunity found.");
+    }}catch(e : any){
+        console.log("Error in calculating arbitrage profit");
+        console.log(e.message);
+    }
+}
