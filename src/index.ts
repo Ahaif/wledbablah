@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { ethers } from "ethers";
-import { fetchLiquidity } from './dexInteractions';
+import { fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
 
 // import { setupBlocknative } from './monitorMempool';
 
@@ -15,8 +15,9 @@ async function main() {
         // setupBlocknative(); listening to mempool
 
          //fetch data from uniswap, check for liquidity // check for arbitrage opportunity
-         fetchLiquidity('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F');
-        
+         const uniswapData = fetchLiquidity('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F');
+         const sushiSwapData = fetch_LiquiditySushiswap('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F')
+       
 
     }catch(e: any){
         console.log(e.message);
