@@ -3,25 +3,39 @@ import { ethers } from "ethers";
 import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
 import { DEX_IDENTIFIERS } from './constants';
 
+
 dotenv.config();
 
-export const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
+// Setup the provider
+const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
 
-export async function fetchLiquidity(tokenA: string, tokenB: string) {
-    const routerContract = new ethers.Contract(DEX_IDENTIFIERS.UNISWAP, UniswapRouterABI.result, provider);
-    const amountIn = ethers.utils.parseEther("1"); // Example amount for TokenA
+// Uniswap Router address (make sure it's checksummed)
+// console.log(DEX_IDENTIFIERS.UNISWAP);
 
-    try {
-        const amountsOut = await routerContract.getAmountsOut(amountIn, [tokenA, tokenB]);
-        const amountOutTokenB = amountsOut[1];
+// const uniswapRouterAddress = ethers.utils.getAddress('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D');
+// console.log(uniswapRouterAddress);
 
-        console.log(`For 1 unit of TokenA (${tokenA}), you get ${ethers.utils.formatUnits(amountOutTokenB, 18)} units of TokenB (${tokenB})`);
+// Initialize the Uniswap Router Contract
+const uniswapRouterContract = new ethers.Contract(DEX_IDENTIFIERS.UNISWAP, UniswapRouterABI.result, provider);
 
-        // Here you would implement logic to fetch prices from another DEX (e.g., SushiSwap)
-        // and compare them to identify arbitrage opportunities.
-    } catch (error : any) {
-        console.error('Error fetching liquidity:', error.message);
-    }
+export async function fetchLiquidity(tokenA:string,tokenB: string) {
+  try {
+    // Ensure both token addresses are checksummed
+    const tokenAAddress = ethers.utils.getAddress(tokenA);
+    const tokenBAddress = ethers.utils.getAddress(tokenB);
+
+    // Use the getAmountsOut function
+    const amountIn = ethers.utils.parseEther("1"); // Example: 1 token
+    const amountsOut = await uniswapRouterContract.getAmountsOut(amountIn, [tokenAAddress, tokenBAddress]);
+
+    // Output the amounts for debugging
+    console.log(`Amounts Out: ${amountsOut}`);
+
+    // Logic for comparing prices for arbitrage goes here
+    // ...
+  } catch (error) {
+    console.error(`Error fetching liquidity: ${error}`);
+  }
 }
 
-// Example usage, replace token addresses with actual addresses
+// Example usage (ensure you replace these with actual token addresses)
