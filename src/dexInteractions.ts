@@ -3,6 +3,7 @@ import { BigNumber, ethers } from "ethers";
 import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
 import SushiswapRouterAbi from './contracts/ABIs/SushiswapAbi.json';
 import { DEX_IDENTIFIERS } from './constants';
+import{ArbitrageOpportunityI} from './interfaces';
 
 
 dotenv.config();
@@ -79,55 +80,55 @@ export async function fetch_LiquiditySushiswap(tokenA:string,tokenB: string) {
 }
 
 
-async function getCurrentGasPrice(){
-  try {
-      const gasPrice = await provider.getGasPrice();
-      console.log(`Current gas price: ${ethers.utils.formatUnits(gasPrice, 'gwei')} gwei`);
-      return gasPrice;
-  } catch (error) {
-      console.error('Error fetching current gas price:', error);
-      throw error;
-  }
-}
+// async function getCurrentGasPrice(){
+//   try {
+//       const gasPrice = await provider.getGasPrice();
+//       console.log(`Current gas price: ${ethers.utils.formatUnits(gasPrice, 'gwei')} gwei`);
+//       return gasPrice;
+//   } catch (error) {
+//       console.error('Error fetching current gas price:', error);
+//       throw error;
+//   }
+// }
 
 
-export async function estimateGasLimitForTokenSwap(
-  dexRouterContract : ethers.Contract,
-  tokenInAddress: string,
-  tokenOutAddress: string,
-  tokenInAmount: BigNumber,
-  userAddress: string,
-) {
-  try{
-    let now = new Date
-// Uniswap requires a deadline for the swap. 30 minutes from now expressed as milliseconds since epoch 
-const deadline = now.setTime(now.getTime() + (30 * 60 * 1000)) 
-const gasLimit = await dexRouterContract.estimateGas.swapExactTokensForTokens(
-  tokenInAmount,
-  0,
-  [
-      tokenInAddress,
-      tokenOutAddress
-  ],
-  userAddress,
-  deadline,
-  {
-      from: userAddress
-  }
-)
-return gasLimit.toString()
+// export async function estimateGasLimitForTokenSwap(
+//   dexRouterContract : ethers.Contract,
+//   tokenInAddress: string,
+//   tokenOutAddress: string,
+//   tokenInAmount: BigNumber,
+//   userAddress: string,
+// ) {
+//   try{
+//     let now = new Date
+// // Uniswap requires a deadline for the swap. 30 minutes from now expressed as milliseconds since epoch 
+// const deadline = now.setTime(now.getTime() + (30 * 60 * 1000)) 
+// const gasLimit = await dexRouterContract.estimateGas.swapExactTokensForTokens(
+//   tokenInAmount,
+//   0,
+//   [
+//       tokenInAddress,
+//       tokenOutAddress
+//   ],
+//   userAddress,
+//   deadline,
+//   {
+//       from: userAddress
+//   }
+// )
+// return gasLimit.toString()
 
-  }catch(e : any){
-    throw new Error(`Error estimating gas limit for token swap: ${e.message}`);
-  }
+//   }catch(e : any){
+//     throw new Error(`Error estimating gas limit for token swap: ${e.message}`);
+//   }
 
-}
-
-
+// }
 
 
 
-export async function calculateArbitrageProfit(amountOutUniswap: BigNumber, amountOutSushiswap: BigNumber, tokenA: string, tokenB: string): Promise<void> {
+
+
+export async function calculateArbitrageProfit(amountOutUniswap: BigNumber, amountOutSushiswap: BigNumber, tokenA: string, tokenB: string): Promise<ArbitrageOpportunityI> {
 
     const amountOutUniswapBigNumber = ethers.BigNumber.from(amountOutUniswap.toString());
     const amountOutSushiswapBigNumber = ethers.BigNumber.from(amountOutSushiswap.toString());
@@ -136,41 +137,65 @@ export async function calculateArbitrageProfit(amountOutUniswap: BigNumber, amou
     
     try{   
        
-        const slippageTolerance = 0.01; // 1%
+      const slippageTolerance = 0.01; // 1%
 
-        const gasCostUniswap = await estimateGasLimitForTokenSwap(uniswapRouterContract, tokenA, tokenB, ethers.utils.parseEther("10"), wallet.address);
-        const gasCostSushiswap = await estimateGasLimitForTokenSwap(uniswapRouterContract, tokenA, tokenB, ethers.utils.parseEther("10"), wallet.address);
-        console.log(`Gas cost for Uniswap: ${ethers.utils.formatEther(gasCostUniswap)}`);
-        console.log(`Gas cost for Sushiswap: ${ethers.utils.formatEther(gasCostSushiswap)}`);
-    
+      const currentGasPrice = await provider.getGasPrice();
+      const adjustedGasPrice = currentGasPrice.mul(110).div(100); // Increase gas price by 10% for urgency
+
+     //ignoring dynamic gas limit for now
+      const estimatedGasLimit = ethers.BigNumber.from(200000);
+
+      // Now, perform multiplication with BigNumber objects
+      const gasCostUniswap = estimatedGasLimit.mul(adjustedGasPrice);
+      const gasCostSushiswap = estimatedGasLimit.mul(adjustedGasPrice);
+
+      console.log(`Gas cost for Uniswap: ${ethers.utils.formatEther(gasCostUniswap)} ETH`);
+      console.log(`Gas cost for Sushiswap: ${ethers.utils.formatEther(gasCostSushiswap)} ETH`);
 
 
-    //     const slippageFactorUniswap = amountOutUniswapBigNumber.mul(100 - (slippageTolerance * 100)).div(100);
-    //     const slippageFactorSushiswap = amountOutSushiswapBigNumber.mul(100 - (slippageTolerance * 100)).div(100);
+        const slippageFactorUniswap = amountOutUniswapBigNumber.mul(100 - (slippageTolerance * 100)).div(100);
+        const slippageFactorSushiswap = amountOutSushiswapBigNumber.mul(100 - (slippageTolerance * 100)).div(100);
         
-    //     const effectiveAmountOutUniswap = slippageFactorUniswap.sub(gasCostUniswap);
-    //     const effectiveAmountOutSushiswap = slippageFactorSushiswap.sub(gasCostSushiswap);
+        const effectiveAmountOutUniswap = slippageFactorUniswap.sub(gasCostUniswap);
+        const effectiveAmountOutSushiswap = slippageFactorSushiswap.sub(gasCostSushiswap);
 
-    //     const potentialProfitSushiswap = effectiveAmountOutSushiswap.sub(effectiveAmountOutUniswap); // Sushiswap as target
-    //     const potentialProfitUniswap = effectiveAmountOutUniswap.sub(effectiveAmountOutSushiswap ); // Uniswap as target
+        const potentialProfitSushiswap = effectiveAmountOutSushiswap.sub(effectiveAmountOutUniswap); // Sushiswap as target
+        const potentialProfitUniswap = effectiveAmountOutUniswap.sub(effectiveAmountOutSushiswap ); // Uniswap as target
 
-    //     console.log(`Potential Profit on Uniswap: ${ethers.utils.formatEther(potentialProfitUniswap)}`);
-    //     console.log(`Potential Profit on Sushiswap: ${ethers.utils.formatEther(potentialProfitSushiswap)}`);
+        console.log(`Potential Profit on Uniswap: ${ethers.utils.formatEther(potentialProfitUniswap)}`);
+        console.log(`Potential Profit on Sushiswap: ${ethers.utils.formatEther(potentialProfitSushiswap)}`);
 
         
 
-    // // Determine the most profitable scenario
-    // if (potentialProfitSushiswap.gt(0) || potentialProfitUniswap.gt(0)) {
-    //     if (potentialProfitSushiswap.gt(potentialProfitUniswap)) {
-    //         console.log(`Profitable Arbitrage Opportunity on Sushiswap: ${ethers.utils.formatEther(potentialProfitSushiswap)}`);
-    //     } else {
-    //         console.log(`Profitable Arbitrage Opportunity on Uniswap: ${ethers.utils.formatEther(potentialProfitUniswap)}`);
-    //     }
-    // } else {
-    //     console.log("No profitable arbitrage opportunity found.");
-    // }
-  }catch(e : any){
+        if (potentialProfitSushiswap.gt(0) && potentialProfitSushiswap.gt(potentialProfitUniswap)) {
+          // There's an opportunity on Sushiswap
+          return {
+            hasOpportunity: true,
+            direction: 'UNISWAP_TO_SUSHISWAP',
+            amount: amountOutSushiswap// The amount to trade
+          };
+        } else if (potentialProfitUniswap.gt(0)) {
+          // There's an opportunity on Uniswap
+          return {
+            hasOpportunity: true,
+            direction: 'SUSHISWAP_TO_UNISWAP',
+            amount: amountOutUniswap // The amount to trade
+          };
+        } else {
+          // No opportunity detected
+          return {
+            hasOpportunity: false,
+            direction: 'NONE',
+            amount: ethers.constants.Zero // Zero amount indicates no trade needed
+          };
+        }
+    }catch(e : any){
         console.log("Error in calculating arbitrage profit");
         console.log(e.message);
+        return {
+          hasOpportunity: false,
+          direction: 'NONE',
+          amount: ethers.constants.Zero // Zero amount indicates no trade needed
+        };
     }
 }
