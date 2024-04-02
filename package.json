@@ -13,6 +13,7 @@
     "bnc-sdk": "^4.6.8",
     "dotenv": "^16.4.5",
     "ethers": "^5.4.3",
+    "ganache-cli": "^6.12.2",
     "ws": "^8.16.0"
   },
   "devDependencies": {
