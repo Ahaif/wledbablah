@@ -1,10 +1,10 @@
-import { BigNumber, ethers } from 'ethers';
+import ethers  from 'ethers';
 import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
 import SushiswapABI from './contracts/ABIs/SushiswapAbi.json';
 
 import { DEX_IDENTIFIERS } from './constants';
 
-export async function compare_prices(tokenA: string, tokenB: string, amountIn: BigNumber, originatingDexAddress: string) {
+export async function compare_prices(tokenA: string, tokenB: string, amountIn: BigInt, originatingDexAddress: string) {
     const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
     let prices = [];
 
@@ -36,7 +36,7 @@ export async function compare_prices(tokenA: string, tokenB: string, amountIn: B
         console.log("No arbitrage opportunities found.");
     }
 }
-async function getPriceFromDex(dexAddress: string, tokenA: string, tokenB: string, amountIn: BigNumber, provider: ethers.providers.JsonRpcProvider, abi: any): Promise<BigNumber> {
+async function getPriceFromDex(dexAddress: string, tokenA: string, tokenB: string, amountIn: BigInt, provider: ethers.providers.JsonRpcProvider, abi: any): Promise<BigInt> {
     const router = new ethers.Contract(dexAddress, abi, provider);
 
     try {
@@ -47,6 +47,6 @@ async function getPriceFromDex(dexAddress: string, tokenA: string, tokenB: strin
         return amountsOut[1];
     } catch (error: any) {
         console.error(`Error fetching price from ${dexAddress} for pair ${tokenA}-${tokenB}: NOliquidity or Not Listed`);
-        return BigNumber.from("0");
+        return BigInt("0");
     }
 }

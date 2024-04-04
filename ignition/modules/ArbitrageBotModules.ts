@@ -7,7 +7,6 @@ const ArbitrageBotModule = buildModule("ArbitrageBotModule", (m) => {
   const initialOwner = m.getParameter("initialOwner", "0xf8c3Ad10cd0BF7BFc208d03A80C56d4D835801C6");
 
   const arbitrageBot = m.contract("ArbitrageBot", [initialOwner]);
-  console.log("ArbitrageBot deployed to:", arbitrageBot.address);
 
   return { arbitrageBot };
 });

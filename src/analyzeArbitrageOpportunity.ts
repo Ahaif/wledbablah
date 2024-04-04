@@ -14,16 +14,16 @@ const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 
 function parseTransactionDetails(transaction: any) {
     let tokenA, tokenB;
-    let amountInBN = ethers.BigNumber.from("0");
+    let amountInBN = BigInt("0");
 
     if (transaction.contractCall.methodName === 'swapExactETHForTokens') {
         tokenA = WETH_ADDRESS;
         tokenB = transaction.contractCall.params.path[transaction.contractCall.params.path.length - 1];
-        amountInBN = ethers.BigNumber.from(transaction.value);
+        amountInBN = BigInt(transaction.value);
     } else {
         tokenA = transaction.contractCall.params.path[0];
         tokenB = transaction.contractCall.params.path[transaction.contractCall.params.path.length - 1];
-        amountInBN = ethers.BigNumber.from(transaction.contractCall.params.amountIn);
+        amountInBN = BigInt(transaction.contractCall.params.amountIn);
     }
     const formattedTokenA  = ethers.utils.getAddress(tokenA);
     const formattedTokenB = ethers.utils.getAddress(tokenB);

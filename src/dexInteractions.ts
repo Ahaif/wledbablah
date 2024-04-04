@@ -1,14 +1,16 @@
 import dotenv from 'dotenv';
-import { BigNumber, ethers } from "ethers";
+import { BigNumberish, } from "ethers";
+import ethers  from 'ethers';
 import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
 import SushiswapRouterAbi from './contracts/ABIs/SushiswapAbi.json';
 import { DEX_IDENTIFIERS } from './constants';
 import{ArbitrageOpportunityI} from './interfaces';
+import { formatEther, parseEther, getAddress } from 'ethers/lib.commonjs/utils';
 
 
 dotenv.config();
 
-const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
+const provider = new ethers.JsonRpcProvider(process.env.INFURA_URL);
 // Assuming you're getting the private key like this:
 const privateKey = process.env.PRIVATE_KEY;
 
@@ -42,11 +44,11 @@ export async function fetchLiquidity(tokenA:string,tokenB: string) {
 
 
     // Use the getAmountsOut function
-    const amountIn = ethers.utils.parseEther("10"); // Example: 1 token
+    const amountIn = ethers.parseEther("10"); // Example: 1 token
     const amountsOut  = await uniswapRouterContract.getAmountsOut(amountIn, [tokenAAddress, tokenBAddress]);
 
     // Output the amounts for debugging
-    console.log(`Liquidity for token ${tokenB}: ${ethers.utils.formatEther(amountsOut[1])}`);
+    console.log(`Liquidity for token ${tokenB}: ${ethers.formatEther(amountsOut[1])}`);
     return amountsOut[1];
  
 
@@ -66,11 +68,11 @@ export async function fetch_LiquiditySushiswap(tokenA:string,tokenB: string) {
 
 
     // Use the getAmountsOut function
-    const amountIn = ethers.utils.parseEther("10"); // Example: 1 token
+    const amountIn = ethers.parseEther("10"); // Example: 1 token
     const amountsOut = await SushiswapRouterContract.getAmountsOut(amountIn, [tokenAAddress, tokenBAddress]);
 
     // Output the amounts for debugging
-    console.log(`Liquidity for token in sushiswap ${tokenB}: ${ethers.utils.formatEther(amountsOut[1])}`);
+    console.log(`Liquidity for token in sushiswap ${tokenB}: ${ethers.formatEther(amountsOut[1])}`);
     return amountsOut[1];
  
   } catch (error : any) {
@@ -128,10 +130,10 @@ export async function fetch_LiquiditySushiswap(tokenA:string,tokenB: string) {
 
 
 
-export async function calculateArbitrageProfit(amountOutUniswap: BigNumber, amountOutSushiswap: BigNumber, tokenA: string, tokenB: string): Promise<ArbitrageOpportunityI> {
+export async function calculateArbitrageProfit(amountOutUniswap: BigInt, amountOutSushiswap: BigInt, tokenA: string, tokenB: string): Promise<ArbitrageOpportunityI> {
 
-    const amountOutUniswapBigNumber = ethers.BigNumber.from(amountOutUniswap.toString());
-    const amountOutSushiswapBigNumber = ethers.BigNumber.from(amountOutSushiswap.toString());
+    const amountOutUniswapBigNumber = BigInt(amountOutUniswap.toString());
+    const amountOutSushiswapBigNumber = BigInt(amountOutSushiswap.toString());
 
 
     
@@ -143,7 +145,7 @@ export async function calculateArbitrageProfit(amountOutUniswap: BigNumber, amou
       const adjustedGasPrice = currentGasPrice.mul(110).div(100); // Increase gas price by 10% for urgency
 
      //ignoring dynamic gas limit for now
-      const estimatedGasLimit = ethers.BigNumber.from(200000);
+      const estimatedGasLimit = BigInt("200000");
 
       // Now, perform multiplication with BigNumber objects
       const gasCostUniswap = estimatedGasLimit.mul(adjustedGasPrice);

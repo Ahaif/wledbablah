@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { BigNumberish } from 'ethers';
 import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
 import { TOKENS } from './constants';
+import {ArbitrageBotModuleABI} from './abis/ArbitrageBotModuleABI';
 
 // import { setupBlocknative } from './monitorMempool';
 
