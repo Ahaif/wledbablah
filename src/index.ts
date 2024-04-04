@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { ethers } from "ethers";
-import { BigNumber } from 'ethers';
+import { BigNumberish } from 'ethers';
 import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
 import { TOKENS } from './constants';
 
