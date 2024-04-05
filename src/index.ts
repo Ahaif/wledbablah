@@ -3,14 +3,36 @@ import { ethers } from "ethers";
 import { BigNumberish } from 'ethers';
 import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
 import { TOKENS } from './constants';
-// import {ArbitrageBotModuleABI} from './abis/ArbitrageBotModuleABI';
+import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
 
 // import { setupBlocknative } from './monitorMempool';
-
 dotenv.config();
 
+const ganacheUrl = 'http://localhost:7545';
+const provider = new ethers.JsonRpcProvider(ganacheUrl); // Or any other provider URL
+if (!process.env.PRIVATE_KEY) {
+    throw new Error("PRIVATE_KEY environment variable is not set.");
+}
+
+// Now TypeScript knows process.env.PRIVATE_KEY cannot be undefined here
+const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+// Contract details
+const contractAddress = "0x65dd716466E9A2D2bC49A2E6BB8fE88Ac8c4f173"; // Replace with your contract's address
+// Create a contract instance
+const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
 
+
+async function checkContractOwner() {
+    try {
+        // Assuming your contract is `Ownable`, calling the `owner` function
+        const ownerAddress = await arbitrageBot.owner();
+        console.log(`The owner of the contract is: ${ownerAddress}`);
+    } catch (error) {
+        console.error("Error calling the contract:", error);
+    }
+}
 
 async function main() {
 
@@ -29,6 +51,8 @@ async function main() {
          const { hasOpportunity, direction, amount } = await calculateArbitrageProfit(uniswapData, sushiSwapData, TOKENS.WETH, TOKENS.DAI);
          if (hasOpportunity) {
             // await triggerSmartContractTrade(direction, amount);
+            checkContractOwner();
+
             console.log(`Arbitrage opportunity detected: ${direction}! Trigger Smart Contract`);
         }
 

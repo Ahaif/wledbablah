@@ -31,6 +31,8 @@ const config: HardhatUserConfig = {
   networks: {
     ganache: {
       url: "http://127.0.0.1:7545", // Your Ganache RPC server address and port
+      // chainId :5777,
+  
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
