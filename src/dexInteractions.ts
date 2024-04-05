@@ -12,6 +12,7 @@ import { on } from 'ws';
 dotenv.config();
 
 const provider = new ethers.JsonRpcProvider(process.env.INFURA_URL);
+
 // Assuming you're getting the private key like this:
 const privateKey = process.env.PRIVATE_KEY;
 
@@ -45,7 +46,7 @@ export async function fetchLiquidity(tokenA:string,tokenB: string) {
 
 
     // Use the getAmountsOut function
-    const amountIn = ethers.parseEther("10"); // Example: 1 token
+    const amountIn: BigInt = ethers.parseEther("10"); // Example: 1 token
     const amountsOut  = await uniswapRouterContract.getAmountsOut(amountIn, [tokenAAddress, tokenBAddress]);
 
     // Output the amounts for debugging
@@ -130,78 +131,73 @@ export async function fetch_LiquiditySushiswap(tokenA:string,tokenB: string) {
 
 
 
-
-
-// Correcting for ethers v6 and native BigInt usage
 export async function calculateArbitrageProfit(
-    amountOutUniswap: bigint, // Using native bigint type
+    amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
     tokenA: string,
     tokenB: string
 ): Promise<ArbitrageOpportunityI> {
     try {
-        const slippageTolerance = 1n - 1n / 100n; // Adjusted for bigint, equivalent to 99/100 for 1% slippage
+        // Adjusted for bigint, assuming a percentage (e.g., 1% as 0.99)
+        const slippageTolerance: bigint = 99n;
 
+        // Fetching the gas price as bigint
         const feeData = await provider.getFeeData();
-        let adjustedGasPrice;
-        
-        if (feeData.gasPrice) {
-            adjustedGasPrice = feeData.gasPrice * 110n / 100n;
-        } else if (feeData.maxFeePerGas && feeData.maxPriorityFeePerGas) {
-            // Simplistic adjustment, consider a more nuanced approach based on network conditions
-            adjustedGasPrice = (feeData.maxFeePerGas + feeData.maxPriorityFeePerGas) / 2n;
-            adjustedGasPrice = adjustedGasPrice * 110n / 100n;
+        let adjustedGasPrice: bigint;
+
+        // Check and use maxFeePerGas if EIP-1559 is supported, otherwise use gasPrice
+        if (feeData.maxFeePerGas) {
+            adjustedGasPrice = (feeData.maxFeePerGas * 110n) / 100n; // Adjusting the gas price by 10%
+        } else if (feeData.gasPrice) {
+            adjustedGasPrice = (feeData.gasPrice * 110n) / 100n; // Adjusting the gas price by 10%
         } else {
             throw new Error("Unable to determine the gas price.");
         }
-        const estimatedGasLimit = 200000n; // Using bigint literal
 
-        // Calculating gas costs
-        const gasCostUniswap = estimatedGasLimit * adjustedGasPrice;
-        const gasCostSushiswap = estimatedGasLimit * adjustedGasPrice;
+        const estimatedGasLimit = 200000n; // Using bigint literal for gas limit
 
-        // Note: formatUnits expects a string for its first argument
-        console.log(`Gas cost for Uniswap: ${ethers.formatUnits(gasCostUniswap.toString(), 'ether')} ETH`);
-        console.log(`Gas cost for Sushiswap: ${ethers.formatUnits(gasCostSushiswap.toString(), 'ether')} ETH`);
+        // Calculating gas costs as bigint
+        const gasCost = estimatedGasLimit * adjustedGasPrice;
 
-        // Applying slippage tolerance and subtracting gas costs
-        const effectiveAmountOutUniswap = amountOutUniswap * slippageTolerance / 100n - gasCostUniswap;
-        const effectiveAmountOutSushiswap = amountOutSushiswap * slippageTolerance / 100n - gasCostSushiswap;
+        // Applying slippage tolerance and subtracting gas costs, ensuring all operations are with bigint
+        const effectiveAmountOutUniswap = (amountOutUniswap * slippageTolerance) / 100n - gasCost;
+        const effectiveAmountOutSushiswap = (amountOutSushiswap * slippageTolerance) / 100n - gasCost;
 
         // Calculating potential profit
         const potentialProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap;
         const potentialProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap;
 
-        console.log(`Potential Profit on Uniswap: ${ethers.formatUnits(potentialProfitUniswap.toString(), 'ether')} ETH`);
-        console.log(`Potential Profit on Sushiswap: ${ethers.formatUnits(potentialProfitSushiswap.toString(), 'ether')} ETH`);
+        console.log(`Potential Profit on Uniswap: ${ethers.formatEther(potentialProfitUniswap.toString())} ETH`);
+        console.log(`Potential Profit on Sushiswap: ${ethers.formatEther(potentialProfitSushiswap.toString())} ETH`);
 
-        if (potentialProfitSushiswap > 0 && potentialProfitSushiswap > potentialProfitUniswap) {
+        if (potentialProfitSushiswap > 0n && potentialProfitSushiswap > potentialProfitUniswap) {
             return {
                 hasOpportunity: true,
                 direction: 'UNISWAP_TO_SUSHISWAP',
-                amount: amountOutSushiswap // Note: Adjust according to your interface expectations
+                amount: effectiveAmountOutSushiswap // Adjust this as needed
             };
-        } else if (potentialProfitUniswap > 0) {
+        } else if (potentialProfitUniswap > 0n) {
             return {
                 hasOpportunity: true,
                 direction: 'SUSHISWAP_TO_UNISWAP',
-                amount: amountOutUniswap
+                amount: effectiveAmountOutUniswap // Adjust this as needed
             };
         } else {
             return {
                 hasOpportunity: false,
                 direction: 'NONE',
-                amount: 0n
+                amount: 0n // Zero indicates no trade needed
             };
         }
-    } catch(e : any) {
+    } catch (e: any) {
         console.error("Error in calculating arbitrage profit", e.message);
         return {
             hasOpportunity: false,
             direction: 'NONE',
-            amount: 0n
+            amount: 0n // Ensure consistency in return type
         };
     }
 }
+
 
 

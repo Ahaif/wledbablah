@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { ethers } from "ethers";
-import { BigNumberish } from 'ethers';
+
 import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
 import { TOKENS } from './constants';
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
@@ -22,7 +22,7 @@ const contractAddress = "0x150103130626D74aB791Ca559CFbDcC8D31A8E51"; // Replace
 // Create a contract instance
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
-
+const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 
 async function checkContractOwner() {
     try {
@@ -33,6 +33,25 @@ async function checkContractOwner() {
         console.log(`Contract Greeting: ${greeting}`);
     } catch (error) {
         console.error("Error calling the contract:", error);
+    }
+}
+
+
+
+
+async function initiateArbitrage(assetAddress : string, loanAmount: bigint) {
+    // Define additional parameters if needed, for example, the trading strategy
+    const params = abiCoder.encode(
+        ["address", "uint256"], // Update types based on your contract's `executeOperation` function
+        [assetAddress, loanAmount] // Update values based on your needs
+    );
+
+    try {
+        const tx = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, params);
+        const receipt = await tx.wait();
+        console.log(`Transaction successful with hash: ${receipt.transactionHash}`);
+    } catch (error: any) {
+        console.error(`Error initiating flash loan: ${error.message}`);
     }
 }
 
@@ -56,6 +75,9 @@ async function main() {
             checkContractOwner();
             //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
 
+            const assetAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address as an example
+            const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
+            await initiateArbitrage(assetAddress, loanAmount);
             console.log(`Arbitrage opportunity detected: ${direction}! Trigger Smart Contract`);
         }
 
