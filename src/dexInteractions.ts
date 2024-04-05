@@ -1,11 +1,12 @@
 import dotenv from 'dotenv';
 import { BigNumberish, } from "ethers";
-import ethers  from 'ethers';
+import {ethers, JsonRpcApiProvider } from 'ethers';
 import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
 import SushiswapRouterAbi from './contracts/ABIs/SushiswapAbi.json';
 import { DEX_IDENTIFIERS } from './constants';
 import{ArbitrageOpportunityI} from './interfaces';
-import { formatEther, parseEther, getAddress } from 'ethers/lib.commonjs/utils';
+import { formatEther, parseEther} from 'ethers/lib.commonjs/utils';
+import { on } from 'ws';
 
 
 dotenv.config();
@@ -39,8 +40,8 @@ const SushiswapRouterContract = new ethers.Contract(DEX_IDENTIFIERS.SUSHISWAP, S
 export async function fetchLiquidity(tokenA:string,tokenB: string) {
   try {
     // Ensure both token addresses are checksummed
-    const tokenAAddress = ethers.utils.getAddress(tokenA);
-    const tokenBAddress = ethers.utils.getAddress(tokenB);
+    const tokenAAddress = ethers.getAddress(tokenA);
+    const tokenBAddress = ethers.getAddress(tokenB);
 
 
     // Use the getAmountsOut function
@@ -63,8 +64,8 @@ export async function fetchLiquidity(tokenA:string,tokenB: string) {
 export async function fetch_LiquiditySushiswap(tokenA:string,tokenB: string) {
     try{
 
-    const tokenAAddress = ethers.utils.getAddress(tokenA);
-    const tokenBAddress = ethers.utils.getAddress(tokenB);
+    const tokenAAddress = ethers.getAddress(tokenA);
+    const tokenBAddress = ethers.getAddress(tokenB);
 
 
     // Use the getAmountsOut function
@@ -130,74 +131,77 @@ export async function fetch_LiquiditySushiswap(tokenA:string,tokenB: string) {
 
 
 
-export async function calculateArbitrageProfit(amountOutUniswap: BigInt, amountOutSushiswap: BigInt, tokenA: string, tokenB: string): Promise<ArbitrageOpportunityI> {
 
-    const amountOutUniswapBigNumber = BigInt(amountOutUniswap.toString());
-    const amountOutSushiswapBigNumber = BigInt(amountOutSushiswap.toString());
+// Correcting for ethers v6 and native BigInt usage
+export async function calculateArbitrageProfit(
+    amountOutUniswap: bigint, // Using native bigint type
+    amountOutSushiswap: bigint,
+    tokenA: string,
+    tokenB: string
+): Promise<ArbitrageOpportunityI> {
+    try {
+        const slippageTolerance = 1n - 1n / 100n; // Adjusted for bigint, equivalent to 99/100 for 1% slippage
 
-
-    
-    try{   
-       
-      const slippageTolerance = 0.01; // 1%
-
-      const currentGasPrice = await provider.getGasPrice();
-      const adjustedGasPrice = currentGasPrice.mul(110).div(100); // Increase gas price by 10% for urgency
-
-     //ignoring dynamic gas limit for now
-      const estimatedGasLimit = BigInt("200000");
-
-      // Now, perform multiplication with BigNumber objects
-      const gasCostUniswap = estimatedGasLimit.mul(adjustedGasPrice);
-      const gasCostSushiswap = estimatedGasLimit.mul(adjustedGasPrice);
-
-      console.log(`Gas cost for Uniswap: ${ethers.utils.formatEther(gasCostUniswap)} ETH`);
-      console.log(`Gas cost for Sushiswap: ${ethers.utils.formatEther(gasCostSushiswap)} ETH`);
-
-
-        const slippageFactorUniswap = amountOutUniswapBigNumber.mul(100 - (slippageTolerance * 100)).div(100);
-        const slippageFactorSushiswap = amountOutSushiswapBigNumber.mul(100 - (slippageTolerance * 100)).div(100);
+        const feeData = await provider.getFeeData();
+        let adjustedGasPrice;
         
-        const effectiveAmountOutUniswap = slippageFactorUniswap.sub(gasCostUniswap);
-        const effectiveAmountOutSushiswap = slippageFactorSushiswap.sub(gasCostSushiswap);
-
-        const potentialProfitSushiswap = effectiveAmountOutSushiswap.sub(effectiveAmountOutUniswap); // Sushiswap as target
-        const potentialProfitUniswap = effectiveAmountOutUniswap.sub(effectiveAmountOutSushiswap ); // Uniswap as target
-
-        console.log(`Potential Profit on Uniswap: ${ethers.utils.formatEther(potentialProfitUniswap)}`);
-        console.log(`Potential Profit on Sushiswap: ${ethers.utils.formatEther(potentialProfitSushiswap)}`);
-
-        
-
-        if (potentialProfitSushiswap.gt(0) && potentialProfitSushiswap.gt(potentialProfitUniswap)) {
-          // There's an opportunity on Sushiswap
-          return {
-            hasOpportunity: true,
-            direction: 'UNISWAP_TO_SUSHISWAP',
-            amount: amountOutSushiswap// The amount to trade
-          };
-        } else if (potentialProfitUniswap.gt(0)) {
-          // There's an opportunity on Uniswap
-          return {
-            hasOpportunity: true,
-            direction: 'SUSHISWAP_TO_UNISWAP',
-            amount: amountOutUniswap // The amount to trade
-          };
+        if (feeData.gasPrice) {
+            adjustedGasPrice = feeData.gasPrice * 110n / 100n;
+        } else if (feeData.maxFeePerGas && feeData.maxPriorityFeePerGas) {
+            // Simplistic adjustment, consider a more nuanced approach based on network conditions
+            adjustedGasPrice = (feeData.maxFeePerGas + feeData.maxPriorityFeePerGas) / 2n;
+            adjustedGasPrice = adjustedGasPrice * 110n / 100n;
         } else {
-          // No opportunity detected
-          return {
+            throw new Error("Unable to determine the gas price.");
+        }
+        const estimatedGasLimit = 200000n; // Using bigint literal
+
+        // Calculating gas costs
+        const gasCostUniswap = estimatedGasLimit * adjustedGasPrice;
+        const gasCostSushiswap = estimatedGasLimit * adjustedGasPrice;
+
+        // Note: formatUnits expects a string for its first argument
+        console.log(`Gas cost for Uniswap: ${ethers.formatUnits(gasCostUniswap.toString(), 'ether')} ETH`);
+        console.log(`Gas cost for Sushiswap: ${ethers.formatUnits(gasCostSushiswap.toString(), 'ether')} ETH`);
+
+        // Applying slippage tolerance and subtracting gas costs
+        const effectiveAmountOutUniswap = amountOutUniswap * slippageTolerance / 100n - gasCostUniswap;
+        const effectiveAmountOutSushiswap = amountOutSushiswap * slippageTolerance / 100n - gasCostSushiswap;
+
+        // Calculating potential profit
+        const potentialProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap;
+        const potentialProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap;
+
+        console.log(`Potential Profit on Uniswap: ${ethers.formatUnits(potentialProfitUniswap.toString(), 'ether')} ETH`);
+        console.log(`Potential Profit on Sushiswap: ${ethers.formatUnits(potentialProfitSushiswap.toString(), 'ether')} ETH`);
+
+        if (potentialProfitSushiswap > 0 && potentialProfitSushiswap > potentialProfitUniswap) {
+            return {
+                hasOpportunity: true,
+                direction: 'UNISWAP_TO_SUSHISWAP',
+                amount: amountOutSushiswap // Note: Adjust according to your interface expectations
+            };
+        } else if (potentialProfitUniswap > 0) {
+            return {
+                hasOpportunity: true,
+                direction: 'SUSHISWAP_TO_UNISWAP',
+                amount: amountOutUniswap
+            };
+        } else {
+            return {
+                hasOpportunity: false,
+                direction: 'NONE',
+                amount: 0n
+            };
+        }
+    } catch(e : any) {
+        console.error("Error in calculating arbitrage profit", e.message);
+        return {
             hasOpportunity: false,
             direction: 'NONE',
-            amount: ethers.constants.Zero // Zero amount indicates no trade needed
-          };
-        }
-    }catch(e : any){
-        console.log("Error in calculating arbitrage profit");
-        console.log(e.message);
-        return {
-          hasOpportunity: false,
-          direction: 'NONE',
-          amount: ethers.constants.Zero // Zero amount indicates no trade needed
+            amount: 0n
         };
     }
 }
+
+

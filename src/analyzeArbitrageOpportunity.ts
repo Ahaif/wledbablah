@@ -25,14 +25,14 @@ function parseTransactionDetails(transaction: any) {
         tokenB = transaction.contractCall.params.path[transaction.contractCall.params.path.length - 1];
         amountInBN = BigInt(transaction.contractCall.params.amountIn);
     }
-    const formattedTokenA  = ethers.utils.getAddress(tokenA);
-    const formattedTokenB = ethers.utils.getAddress(tokenB);
+    const formattedTokenA  = ethers.getAddress(tokenA);
+    const formattedTokenB = ethers.getAddress(tokenB);
 
     return { formattedTokenA, formattedTokenB, amountInBN };
 }
 
 export async function analyzeArbitrageOpportunity(transaction: any) {
-    const dexAddress = ethers.utils.getAddress(transaction.to);
+    const dexAddress = ethers.getAddress(transaction.to);
     if (!transaction || !transaction.contractCall) {
         console.log("Transaction is empty, does not involve a contract call, or is not related to the monitored DEXes.");
         return;
