@@ -52,8 +52,9 @@ async function main() {
 
          const { hasOpportunity, direction, amount } = await calculateArbitrageProfit(uniswapData, sushiSwapData, TOKENS.WETH, TOKENS.DAI);
          if (hasOpportunity) {
-            // await triggerSmartContractTrade(direction, amount);
+            
             checkContractOwner();
+            //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
 
             console.log(`Arbitrage opportunity detected: ${direction}! Trigger Smart Contract`);
         }
