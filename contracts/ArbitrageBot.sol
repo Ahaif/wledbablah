@@ -10,8 +10,8 @@ import "../interfaces/ILendingPool.sol";
 
 contract ArbitrageBot is ReentrancyGuard, Ownable {
     address private constant AAVE_LENDING_POOL_ADDRESSES_PROVIDER = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
-    // address private constant UNISWAP_ROUTER = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
-    // address private constant SUSHISWAP_ROUTER = address(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
+    address private constant UNISWAP_ROUTER = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    address private constant SUSHISWAP_ROUTER = address(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
 
     ILendingPoolAddressesProvider private addressesProvider;
     ILendingPool private lendingPool;
@@ -20,6 +20,10 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
 
     constructor(address initialOwner) Ownable(initialOwner) {
        
+    }
+     // A simple view function to test contract connectivity
+    function getGreeting() public pure returns (string memory) {
+        return "Hello, Arbitrage World!";
     }
 
 

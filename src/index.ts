@@ -18,7 +18,7 @@ if (!process.env.PRIVATE_KEY) {
 const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 // Contract details
-const contractAddress = "0x65dd716466E9A2D2bC49A2E6BB8fE88Ac8c4f173"; // Replace with your contract's address
+const contractAddress = "0x150103130626D74aB791Ca559CFbDcC8D31A8E51"; // Replace with your contract's address
 // Create a contract instance
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
@@ -29,6 +29,8 @@ async function checkContractOwner() {
         // Assuming your contract is `Ownable`, calling the `owner` function
         const ownerAddress = await arbitrageBot.owner();
         console.log(`The owner of the contract is: ${ownerAddress}`);
+        const greeting = await arbitrageBot.getGreeting();
+        console.log(`Contract Greeting: ${greeting}`);
     } catch (error) {
         console.error("Error calling the contract:", error);
     }
