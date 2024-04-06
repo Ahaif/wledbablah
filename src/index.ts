@@ -21,36 +21,45 @@ let  window :any; ;
 let signer: ethers.Signer | null = null;
 export let provider: any = null;
 
-// Correct use of async/await with try/catch for error handling
-async function setupProviderAndSigner() {
+
+//connect to fork
+    provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+    const privateKey = process.env.PRIVATE_KEY || "";
+    signer = new ethers.Wallet(privateKey, provider);
+
+
+// Metamaask set up
+// async function setupProviderAndSigner() {
     
-    if (typeof window.ethereum !== 'undefined') {
-        provider = new ethers.BrowserProvider(window.ethereum)
-      try {
-        await provider.send("eth_requestAccounts", []); // Request account access if needed
-        signer = provider.getSigner();
-      } catch (error) {
-        console.error("User denied account access or an error occurred:", error);
-      }
-    } else {
-      console.log("MetaMask not installed; using read-only defaults");
-      provider = ethers.getDefaultProvider();
-    }
+//     if (typeof window.ethereum !== 'undefined') {
+//         provider = new ethers.BrowserProvider(window.ethereum)
+//       try {
+//         await provider.send("eth_requestAccounts", []); // Request account access if needed
+//         signer = provider.getSigner();
+//       } catch (error) {
+//         console.error("User denied account access or an error occurred:", error);
+//       }
+//     } else {
+//       console.log("MetaMask not installed; using read-only defaults");
+//       provider = ethers.getDefaultProvider();
+//     }
   
-    return { provider, signer };
-  }
+//     return { provider, signer };
+//   }
 
 
-//Ganche set up
+//RPC set up
 // const ganacheUrl = 'http://localhost:7545';
 // const provider = new ethers.JsonRpcProvider(ganacheUrl); // Or any other provider URL
 // const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 
 // Contract details
-const contractAddress = "0x150103130626D74aB791Ca559CFbDcC8D31A8E51"; // Replace with your contract's address
+const contractAddress = "0xa1e757125a93160e6dcaD78af4641e6796C4463e"; // Replace with your contract's address
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+
+
 
 async function checkContractOwner() {
     try {
@@ -89,25 +98,26 @@ async function main() {
 
     try{
         // setupBlocknative(); listening to mempool
-            await setupProviderAndSigner();
+            // await setupProviderAndSigner(); metamask set up
          //fetch data from uniswap, check for liquidity // check for arbitrage opportunity
          //not checking for reserve
-         const uniswapData : any=  await fetchLiquidity('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F');
-         const sushiSwapData: any = await fetch_LiquiditySushiswap('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F')
+        //  const uniswapData : any=  await fetchLiquidity('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F');
+        //  const sushiSwapData: any = await fetch_LiquiditySushiswap('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F')
 
-         const { hasOpportunity, direction, amount } = await calculateArbitrageProfit(uniswapData, sushiSwapData, TOKENS.WETH, TOKENS.DAI);
-         if (hasOpportunity) {
+        //  const { hasOpportunity, direction, amount } = await calculateArbitrageProfit(uniswapData, sushiSwapData, TOKENS.WETH, TOKENS.DAI);
+        //  if (hasOpportunity) {
 
             
             
             checkContractOwner();
+            
             //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
 
-            const assetAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address as an example
-            const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
-            await initiateArbitrage(assetAddress, loanAmount);
-            console.log(`Arbitrage opportunity detected: ${direction}! Trigger Smart Contract`);
-        }
+            // const assetAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address as an example
+            // const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
+            // await initiateArbitrage(assetAddress, loanAmount);
+            // console.log(`Arbitrage opportunity detected: ${direction}! Trigger Smart Contract`);
+        // }
 
     }catch(e: any){
         console.log(e.message);

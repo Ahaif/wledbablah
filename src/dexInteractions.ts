@@ -7,12 +7,12 @@ import { DEX_IDENTIFIERS } from './constants';
 import{ArbitrageOpportunityI} from './interfaces';
 import { formatEther, parseEther} from 'ethers/lib.commonjs/utils';
 import { on } from 'ws';
-import { provider } from '.';
+// import { provider } from '.';
 
 
 dotenv.config();
 
-// const provider = new ethers.JsonRpcProvider(process.env.INFURA_URL);
+const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
 
 // Assuming you're getting the private key like this:
 const privateKey = process.env.PRIVATE_KEY;
