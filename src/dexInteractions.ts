@@ -7,18 +7,19 @@ import { DEX_IDENTIFIERS } from './constants';
 import{ArbitrageOpportunityI} from './interfaces';
 import { formatEther, parseEther} from 'ethers/lib.commonjs/utils';
 import { on } from 'ws';
+import { provider } from '.';
 
 
 dotenv.config();
 
-const provider = new ethers.JsonRpcProvider(process.env.INFURA_URL);
+// const provider = new ethers.JsonRpcProvider(process.env.INFURA_URL);
 
 // Assuming you're getting the private key like this:
 const privateKey = process.env.PRIVATE_KEY;
 
 // Validate privateKey is not undefined before using it to create the Wallet instance
-if (!privateKey) {
-  throw new Error("PRIVATE_KEY environment variable is not set.");
+if (!privateKey || !provider) {
+  throw new Error("PRIVATE_KEY or provider environment variable is not set.");
 }
 
 const wallet = new ethers.Wallet(privateKey, provider); 

@@ -1,27 +1,55 @@
 import dotenv from 'dotenv';
 import { ethers } from "ethers";
 
+
 import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
 import { TOKENS } from './constants';
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
 
+
 // import { setupBlocknative } from './monitorMempool';
 dotenv.config();
 
-const ganacheUrl = 'http://localhost:7545';
-const provider = new ethers.JsonRpcProvider(ganacheUrl); // Or any other provider URL
+
+
+
 if (!process.env.PRIVATE_KEY) {
     throw new Error("PRIVATE_KEY environment variable is not set.");
 }
 
-// Now TypeScript knows process.env.PRIVATE_KEY cannot be undefined here
-const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+let  window :any; ;
+let signer: ethers.Signer | null = null;
+export let provider: any = null;
+
+// Correct use of async/await with try/catch for error handling
+async function setupProviderAndSigner() {
+    
+    if (typeof window.ethereum !== 'undefined') {
+        provider = new ethers.BrowserProvider(window.ethereum)
+      try {
+        await provider.send("eth_requestAccounts", []); // Request account access if needed
+        signer = provider.getSigner();
+      } catch (error) {
+        console.error("User denied account access or an error occurred:", error);
+      }
+    } else {
+      console.log("MetaMask not installed; using read-only defaults");
+      provider = ethers.getDefaultProvider();
+    }
+  
+    return { provider, signer };
+  }
+
+
+//Ganche set up
+// const ganacheUrl = 'http://localhost:7545';
+// const provider = new ethers.JsonRpcProvider(ganacheUrl); // Or any other provider URL
+// const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
 
 // Contract details
 const contractAddress = "0x150103130626D74aB791Ca559CFbDcC8D31A8E51"; // Replace with your contract's address
-// Create a contract instance
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
-
 const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 
 async function checkContractOwner() {
@@ -35,8 +63,6 @@ async function checkContractOwner() {
         console.error("Error calling the contract:", error);
     }
 }
-
-
 
 
 async function initiateArbitrage(assetAddress : string, loanAmount: bigint) {
@@ -63,7 +89,7 @@ async function main() {
 
     try{
         // setupBlocknative(); listening to mempool
-
+            await setupProviderAndSigner();
          //fetch data from uniswap, check for liquidity // check for arbitrage opportunity
          //not checking for reserve
          const uniswapData : any=  await fetchLiquidity('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F');
@@ -71,6 +97,8 @@ async function main() {
 
          const { hasOpportunity, direction, amount } = await calculateArbitrageProfit(uniswapData, sushiSwapData, TOKENS.WETH, TOKENS.DAI);
          if (hasOpportunity) {
+
+            
             
             checkContractOwner();
             //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'

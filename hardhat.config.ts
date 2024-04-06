@@ -34,6 +34,10 @@ const config: HardhatUserConfig = {
       // chainId :5777,
   
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    Sepolia : {
+      url: `https://sepolia.infura.io/v3/1b21b86ebb1c4aee8048fb612a51126e`,
+      accounts: [`0x${process.env.PRIVATE_KEY}`] // Use environment variable to keep your private key safe
     }
   },
 
