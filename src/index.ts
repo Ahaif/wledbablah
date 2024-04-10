@@ -11,8 +11,6 @@ import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
 dotenv.config();
 
 
-
-
 if (!process.env.PRIVATE_KEY) {
     throw new Error("PRIVATE_KEY environment variable is not set.");
 }
@@ -31,6 +29,7 @@ export let provider: any = null;
 // Metamaask set up
 // async function setupProviderAndSigner() {
     
+
 //     if (typeof window.ethereum !== 'undefined') {
 //         provider = new ethers.BrowserProvider(window.ethereum)
 //       try {
@@ -55,7 +54,7 @@ export let provider: any = null;
 
 
 // Contract details
-const contractAddress = "0xa1e757125a93160e6dcaD78af4641e6796C4463e"; // Replace with your contract's address
+const contractAddress = `0x707531c9999AaeF9232C8FEfBA31FBa4cB78d84a`; // Replace with your contract's address
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 

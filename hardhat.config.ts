@@ -1,5 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import"@nomicfoundation/hardhat-ignition";
+
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -52,10 +54,16 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: MAINNET_FORK_URL, // Forking enabled using the provided mainnet URL
-        // blockNumber: 12345678, // Optional: Sets the block number to fork from
+        blockNumber: 16107850
       },
-      // accounts: PRIVATE_KEY ? [{ privateKey: `0x${PRIVATE_KEY}`, balance: "10000000000000000000000" }] : [],
+      accounts: PRIVATE_KEY ? [
+        {
+          privateKey: PRIVATE_KEY, // Ensure PRIVATE_KEY is prefixed with 0x
+          balance: "1000" // This is an example balance
+        }
+      ] : [],
     },
+
   },
   paths: {
     sources: "./contracts",
