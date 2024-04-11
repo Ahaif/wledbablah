@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 
 
 import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
-import { TOKENS } from './constants';
+import testAbi from './contracts/ABIs/testAbi.json';
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
 
 
@@ -20,9 +20,24 @@ let signer: ethers.Signer | null = null;
 export let provider: any = null;
 
 
-//connect to fork
+// connect to fork
     provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
     const privateKey = process.env.PRIVATE_KEY || "";
+    async function logNetwork() {
+        try {
+            const network = await provider.getNetwork();
+            const blockNumber = await provider.getBlockNumber()
+            console.log(`Connected to network: ${network.name} (${network.chainId})`);
+            // const bytCode = await provider.getCode(contractAddress);
+            // console.log(bytCode);
+
+            console.log(`Block number: ${blockNumber}`);
+        } catch (error) {
+            console.error("Error fetching network information:", error);
+        }
+    }
+    
+    logNetwork();
     signer = new ethers.Wallet(privateKey, provider);
 
 
@@ -54,7 +69,8 @@ export let provider: any = null;
 
 
 // Contract details
-const contractAddress = `0x707531c9999AaeF9232C8FEfBA31FBa4cB78d84a`; // Replace with your contract's address
+const contractAddress = `0x82bbaa3b0982d88741b275ae1752db85cafe3c65`; // Replace with your contract's address
+
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 

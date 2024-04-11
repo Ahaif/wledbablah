@@ -45,7 +45,7 @@ const config: HardhatUserConfig = {
   networks: {
     // ganache: {
     //   url: "http://127.0.0.1:7545",
-    //   accounts: PRIVATE_KEY ? [`0x${PRIVATE_KEY}`] : [],
+    //   accounts: PRIVATE_KEY ? [`${PRIVATE_KEY}`] : [],
     // },
     // sepolia: {
     //   url: `https://sepolia.infura.io/v3/1b21b86ebb1c4aee8048fb612a51126e`,
@@ -54,14 +54,14 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: MAINNET_FORK_URL, // Forking enabled using the provided mainnet URL
-        blockNumber: 16107850
+        blockNumber: 19000000 , 
       },
-      accounts: PRIVATE_KEY ? [
-        {
-          privateKey: PRIVATE_KEY, // Ensure PRIVATE_KEY is prefixed with 0x
-          balance: "1000" // This is an example balance
-        }
-      ] : [],
+    //   accounts: PRIVATE_KEY ? [
+    //     {
+    //       privateKey: PRIVATE_KEY, // Ensure PRIVATE_KEY is prefixed with 0x
+    //       balance: "1000000000000000000000" // This is an example balance
+    //     }
+    //   ] : [],
     },
 
   },
