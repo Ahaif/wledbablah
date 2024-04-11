@@ -69,7 +69,7 @@ export let provider: any = null;
 
 
 // Contract details
-const contractAddress = `0x82bbaa3b0982d88741b275ae1752db85cafe3c65`; // Replace with your contract's address
+const contractAddress = `0xAE246E208ea35B3F23dE72b697D47044FC594D5F`; // Replace with your contract's address
 
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 const abiCoder = ethers.AbiCoder.defaultAbiCoder();
@@ -91,13 +91,17 @@ async function checkContractOwner() {
 
 async function initiateArbitrage(assetAddress : string, loanAmount: bigint) {
     // Define additional parameters if needed, for example, the trading strategy
-    const params = abiCoder.encode(
-        ["address", "uint256"], // Update types based on your contract's `executeOperation` function
-        [assetAddress, loanAmount] // Update values based on your needs
-    );
+    // const params = abiCoder.encode(
+    //     ["address", "uint256"], // Update types based on your contract's `executeOperation` function
+    //     [assetAddress, loanAmount] // Update values based on your needs
+    // );
+
+    const iface = new ethers.Interface(ArbitrageBotModuleABI.abi);
+    const params = iface.encodeFunctionData("initiateFlashLoan", [ assetAddress, loanAmount ]);
+
 
     try {
-        const tx = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, params);
+        const tx = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount);
         const receipt = await tx.wait();
         console.log(`Transaction successful with hash: ${receipt.transactionHash}`);
     } catch (error: any) {
@@ -128,9 +132,9 @@ async function main() {
             
             //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
 
-            // const assetAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address as an example
-            // const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
-            // await initiateArbitrage(assetAddress, loanAmount);
+            const assetAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address as an example
+            const loanAmount = ethers.parseUnits("100", "ether"); // Requesting 1 E
+            await initiateArbitrage(assetAddress, loanAmount);
             // console.log(`Arbitrage opportunity detected: ${direction}! Trigger Smart Contract`);
         // }
 

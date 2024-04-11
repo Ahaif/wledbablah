@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IPoolAddressesProvider.sol";
-import "../interfaces/IPoolAddressesProvider.sol";
+
 import "../interfaces/IPool.sol";
 
 contract ArbitrageBot is ReentrancyGuard, Ownable{
