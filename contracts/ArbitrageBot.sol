@@ -39,6 +39,9 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
     require(initiator == address(this), "Initiator must be this contract");
     console.log("Initiating Execute operations:");
 
+
+
+
     uint256 amountOwing = amount + premium;
     uint256 balance = IERC20(asset).balanceOf(address(this));
     console.log("Contract balance before repayment:", balance);
@@ -48,7 +51,7 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
     return true;
     }
 
-    function initiateFlashLoan(address asset, uint256 amount) public onlyOwner {
+    function initiateFlashLoan(address asset, uint256 amount, string memory direction) public onlyOwner {
 
         console.log("Initiating flash loan for asset:", asset);
         console.log("Amount requested:", amount);

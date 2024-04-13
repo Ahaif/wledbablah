@@ -1,11 +1,13 @@
 import dotenv from 'dotenv';
 import { ethers } from "ethers";
 import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
+import { DEX_IDENTIFIERS, TOKENS } from './constants';
 import testAbi from './contracts/ABIs/testAbi.json';
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
-
-
+import sendFlashbotsTransaction from './flashbot';
 // import { setupBlocknative } from './monitorMempool';
+
+
 dotenv.config();
 
 
@@ -13,14 +15,18 @@ if (!process.env.PRIVATE_KEY) {
     throw new Error("PRIVATE_KEY environment variable is not set.");
 }
 
-let  window :any; ;
-let signer: ethers.Signer | null = null;
-export let provider: any = null;
+// let  window :any; ;
+// // let signer: ethers.Signer | null = null;
 
 
 // connect to fork
-    provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
-    const privateKey = process.env.PRIVATE_KEY || "";
+const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+const privateKey = process.env.PRIVATE_KEY || "";
+const signer = new ethers.Wallet(privateKey, provider);
+const contractAddress = `0xAE246E208ea35B3F23dE72b697D47044FC594D5F`; // Replace with your contract's address
+const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
+
+
     async function logNetwork() {
         try {
             const network = await provider.getNetwork();
@@ -36,9 +42,7 @@ export let provider: any = null;
     }
     
     logNetwork();
-    signer = new ethers.Wallet(privateKey, provider);
-
-
+    
 // Metamaask set up
 // async function setupProviderAndSigner() {
     
@@ -65,18 +69,8 @@ export let provider: any = null;
 // const provider = new ethers.JsonRpcProvider(ganacheUrl); // Or any other provider URL
 // const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-
-// Contract details
-const contractAddress = `0xAE246E208ea35B3F23dE72b697D47044FC594D5F`; // Replace with your contract's address
-
-const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
-const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-
-
-
 async function checkContractOwner() {
     try {
-        // Assuming your contract is `Ownable`, calling the `owner` function
         const ownerAddress = await arbitrageBot.owner();
         console.log(`The owner of the contract is: ${ownerAddress}`);
         const greeting = await arbitrageBot.getGreeting();
@@ -87,10 +81,10 @@ async function checkContractOwner() {
 }
 
 
-async function initiateArbitrage(assetAddress: string, loanAmount: bigint) {
+async function initiateArbitrage(assetAddress: string, loanAmount: bigint, direction: string) {
     try {
         console.log(`Initiating flash loan for asset: ${assetAddress} with amount: ${loanAmount}`);
-        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount);
+        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, direction, DEX_IDENTIFIERS.UNISWAP, DEX_IDENTIFIERS.SUSHISWAP);
         const receipt = await txResponse.wait();
         // console.log('Transaction receipt:', receipt);
         console.log(`Transaction successful with hash: ${receipt.hash}`);
@@ -103,30 +97,23 @@ async function initiateArbitrage(assetAddress: string, loanAmount: bigint) {
 
 async function main() {
 
-    // while(true){
-    //     console.log("Hello");
-    // }
-
     try{
         // setupBlocknative(); listening to mempool
-            // await setupProviderAndSigner(); metamask set up
-         //fetch data from uniswap, check for liquidity // check for arbitrage opportunity
+        // await setupProviderAndSigner(); metamask set up
+         //fetch data from uniswap, check for liquidity 
          //not checking for reserve
         //  const uniswapData : any=  await fetchLiquidity('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F');
         //  const sushiSwapData: any = await fetch_LiquiditySushiswap('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F')
 
         //  const { hasOpportunity, direction, amount } = await calculateArbitrageProfit(uniswapData, sushiSwapData, TOKENS.WETH, TOKENS.DAI);
         //  if (hasOpportunity) {
-
-            
-            
              await checkContractOwner();
             
             //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
-
             const assetAddress = `0x6B175474E89094C44Da98b954EedeAC495271d0F`; // WETH address as an example
             const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
-            await initiateArbitrage(assetAddress, loanAmount);
+            await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
+            // await initiateArbitrage(assetAddress, loanAmount, direction);
             // console.log(`Arbitrage opportunity detected: ${direction}! Trigger Smart Contract`);
         // }
 
@@ -134,9 +121,6 @@ async function main() {
         console.log(e.message);
         console.log("Error in main");
     }
-   
-
-
     
 }
 
