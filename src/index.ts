@@ -1,7 +1,5 @@
 import dotenv from 'dotenv';
 import { ethers } from "ethers";
-
-
 import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
 import testAbi from './contracts/ABIs/testAbi.json';
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
@@ -89,25 +87,19 @@ async function checkContractOwner() {
 }
 
 
-async function initiateArbitrage(assetAddress : string, loanAmount: bigint) {
-    // Define additional parameters if needed, for example, the trading strategy
-    // const params = abiCoder.encode(
-    //     ["address", "uint256"], // Update types based on your contract's `executeOperation` function
-    //     [assetAddress, loanAmount] // Update values based on your needs
-    // );
-
-    const iface = new ethers.Interface(ArbitrageBotModuleABI.abi);
-    const params = iface.encodeFunctionData("initiateFlashLoan", [ assetAddress, loanAmount ]);
-
-
+async function initiateArbitrage(assetAddress: string, loanAmount: bigint) {
     try {
-        const tx = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount);
-        const receipt = await tx.wait();
-        console.log(`Transaction successful with hash: ${receipt.transactionHash}`);
+        console.log(`Initiating flash loan for asset: ${assetAddress} with amount: ${loanAmount}`);
+        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount);
+        const receipt = await txResponse.wait();
+        // console.log('Transaction receipt:', receipt);
+        console.log(`Transaction successful with hash: ${receipt.hash}`);
     } catch (error: any) {
         console.error(`Error initiating flash loan: ${error.message}`);
+        console.error(`Full error: ${error}`);
     }
 }
+
 
 async function main() {
 
@@ -128,12 +120,12 @@ async function main() {
 
             
             
-            checkContractOwner();
+             await checkContractOwner();
             
             //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
 
-            const assetAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH address as an example
-            const loanAmount = ethers.parseUnits("100", "ether"); // Requesting 1 E
+            const assetAddress = `0x6B175474E89094C44Da98b954EedeAC495271d0F`; // WETH address as an example
+            const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
             await initiateArbitrage(assetAddress, loanAmount);
             // console.log(`Arbitrage opportunity detected: ${direction}! Trigger Smart Contract`);
         // }
