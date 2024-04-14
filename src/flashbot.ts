@@ -5,6 +5,8 @@ import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
 const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
 const privateKey = process.env.PRIVATE_KEY || "";
 const signer = new Wallet(privateKey, provider);
+const authSigner = new Wallet(process.env.FLASHBOTS_SIGNER_KEY || ethers.Wallet.createRandom().privateKey);
+
 const contractAddress = "0xAE246E208ea35B3F23dE72b697D47044FC594D5F";
 const arbitrageBot = new Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
@@ -19,6 +21,8 @@ export async function sendFlashbotsTransaction(assetAddress: string, loanAmount:
         gasLimit: 1000000n,  // specify a sufficient gas limit
         chainId: (await provider.getNetwork()).chainId
     });
+    const signature = await authSigner.signMessage(ethers.arrayify(ethers.keccak256(signedTransaction)));
+
 
     console.log("Signed transaction:", signedTransaction);
 
@@ -39,6 +43,7 @@ export async function sendFlashbotsTransaction(assetAddress: string, loanAmount:
         const response = await axios.post(flashbotsRPC, payload, {
             headers: {
                 'Content-Type': 'application/json',
+                'X-Flashbots-Signature': `${authSigner.address}:${signature}`
             }
         });
         console.log('Bundle submitted, response:', response.data);
