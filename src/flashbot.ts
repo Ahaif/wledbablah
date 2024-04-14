@@ -1,50 +1,49 @@
-import { Wallet, Contract, ethers } from "ethers";
-import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
+import { ethers, Wallet, Contract } from "ethers";
+import axios from 'axios';  // Axios is used for HTTP requests
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
 
-// Ensure the provider and signer are correctly set up
 const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
 const privateKey = process.env.PRIVATE_KEY || "";
-const signer = new ethers.Wallet(privateKey, provider);
-
+const signer = new Wallet(privateKey, provider);
 const contractAddress = "0xAE246E208ea35B3F23dE72b697D47044FC594D5F";
 const arbitrageBot = new Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
-async function sendFlashbotsTransaction(assetAddress: string, loanAmount: string, direction: string) {
-    // Initialize the Flashbots provider
-    const flashbotsProvider = await FlashbotsBundleProvider.create(provider, signer);
+export async function sendFlashbotsTransaction(assetAddress: string, loanAmount: string, direction: string) {
+    let  blockNumber: any = await provider.getBlockNumber();
+    blockNumber += 1;  // Send the bundle in the next block
+    const hexBlockNumber = '0x' + blockNumber.toString(16);
 
-    // Prepare the transaction using populateTransaction which ensures all fields are correctly set
-    const txRequest = await arbitrageBot.populateTransaction.initiateFlashLoan(assetAddress, ethers.parseUnits(loanAmount, 18), direction);
+    const txRequest = await arbitrageBot.initiateFlashLoan.populateTransaction(assetAddress, ethers.parseUnits(loanAmount, 18), direction);
+    const signedTransaction = await signer.signTransaction({
+        ...txRequest,
+        gasLimit: 1000000n,  // specify a sufficient gas limit
+        chainId: (await provider.getNetwork()).chainId
+    });
 
-    // Add necessary fields like gasLimit if not already specified by populateTransaction
-       // Ensure the gas limit is set appropriately
-       txRequest.gasLimit = 1000000n; 
+    console.log("Signed transaction:", signedTransaction);
 
-    // Sign the transaction manually
-    const signedTransaction = await signer.signTransaction(txRequest);
+    const flashbotsRPC = "https://relay.flashbots.net";
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_sendBundle",
+        params: [{
+            txs: [signedTransaction],
+            blockNumber: hexBlockNumber,
+            // minTimestamp: 0,  // Optional: specify if needed
+            // maxTimestamp: Math.floor(Date.now() / 1000) + 120  // 2 minutes from now
+        }]
+    };
 
-    // Specify the block number to target
-    const blockNumber = await provider.getBlockNumber();
-
-    // Flashbots requires signed transactions in the bundle
-    const bundle = [
-        signedTransaction
-    ];
-
-    // Send the bundle to Flashbots
     try {
-        const bundleSubmission: any = await flashbotsProvider.sendRawBundle(bundle, blockNumber + 1);
-        if (bundleSubmission.error) {
-            console.error("Flashbots bundle submission error:", bundleSubmission.error);
-            throw new Error('Failed to send Flashbots bundle');
-        }
-
-        console.log("Bundle submitted, waiting for inclusion...");
-        const waitResponse = await bundleSubmission.wait();
-        console.log('Transaction executed:', waitResponse);
-    } catch (error) {
-        console.error("Error sending Flashbots bundle:", error);
+        const response = await axios.post(flashbotsRPC, payload, {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        console.log('Bundle submitted, response:', response.data);
+    } catch (error : any) {
+        console.error("Error sending Flashbots bundle:", error.response ? error.response.data : error.message);
     }
 }
 

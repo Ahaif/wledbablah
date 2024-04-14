@@ -4,7 +4,7 @@ import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } fr
 import { DEX_IDENTIFIERS, TOKENS } from './constants';
 import testAbi from './contracts/ABIs/testAbi.json';
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
-import sendFlashbotsTransaction from './flashbot';
+import {sendFlashbotsTransaction} from './flashbot';
 // import { setupBlocknative } from './monitorMempool';
 
 
