@@ -47,7 +47,7 @@ export async function fetchLiquidity(tokenA:string,tokenB: string) {
 
 
     // Use the getAmountsOut function
-    const amountIn: BigInt = ethers.parseEther("10"); // Example: 1 token
+    const amountIn: BigInt = ethers.parseEther("1"); // Example: 1 token
     const amountsOut  = await uniswapRouterContract.getAmountsOut(amountIn, [tokenAAddress, tokenBAddress]);
 
     // Output the amounts for debugging
@@ -71,7 +71,7 @@ export async function fetch_LiquiditySushiswap(tokenA:string,tokenB: string) {
 
 
     // Use the getAmountsOut function
-    const amountIn = ethers.parseEther("10"); // Example: 1 token
+    const amountIn = ethers.parseEther("1"); // Example: 1 token
     const amountsOut = await SushiswapRouterContract.getAmountsOut(amountIn, [tokenAAddress, tokenBAddress]);
 
     // Output the amounts for debugging
@@ -175,19 +175,19 @@ export async function calculateArbitrageProfit(
             return {
                 hasOpportunity: true,
                 direction: 'UNISWAP_TO_SUSHISWAP',
-                amount: effectiveAmountOutSushiswap // Adjust this as needed
+                amountOut: effectiveAmountOutSushiswap // Adjust this as needed
             };
         } else if (potentialProfitUniswap > 0n) {
             return {
                 hasOpportunity: true,
                 direction: 'SUSHISWAP_TO_UNISWAP',
-                amount: effectiveAmountOutUniswap // Adjust this as needed
+                amountOut: effectiveAmountOutUniswap // Adjust this as needed
             };
         } else {
             return {
                 hasOpportunity: false,
                 direction: 'NONE',
-                amount: 0n // Zero indicates no trade needed
+                amountOut: 0n // Zero indicates no trade needed
             };
         }
     } catch (e: any) {
@@ -195,7 +195,7 @@ export async function calculateArbitrageProfit(
         return {
             hasOpportunity: false,
             direction: 'NONE',
-            amount: 0n // Ensure consistency in return type
+            amountOut: 0n // Ensure consistency in return type
         };
     }
 }

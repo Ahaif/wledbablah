@@ -23,7 +23,7 @@ if (!process.env.PRIVATE_KEY) {
 const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
 const privateKey = process.env.PRIVATE_KEY || "";
 const signer = new ethers.Wallet(privateKey, provider);
-const contractAddress = `0xAE246E208ea35B3F23dE72b697D47044FC594D5F`; // Replace with your contract's address
+const contractAddress = `0x76a999d5F7EFDE0a300e710e6f52Fb0A4b61aD58`; // Replace with your contract's address
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
 
@@ -81,16 +81,16 @@ async function checkContractOwner() {
 }
 
 
-async function initiateArbitrage(assetAddress: string, loanAmount: bigint, direction: string) {
+async function initiateArbitrage(assetAddress: string, loanAmount: bigint, direction: string, amountOut: BigInt) {
     try {
         console.log(`Initiating flash loan for asset: ${assetAddress} with amount: ${loanAmount}`);
-        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, direction, DEX_IDENTIFIERS.UNISWAP, DEX_IDENTIFIERS.SUSHISWAP);
+        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, direction, '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F', amountOut);
         const receipt = await txResponse.wait();
         // console.log('Transaction receipt:', receipt);
         console.log(`Transaction successful with hash: ${receipt.hash}`);
     } catch (error: any) {
         console.error(`Error initiating flash loan: ${error.message}`);
-        console.error(`Full error: ${error}`);
+        // console.error(`Full error: ${error}`);
     }
 }
 
@@ -102,20 +102,19 @@ async function main() {
         // await setupProviderAndSigner(); metamask set up
          //fetch data from uniswap, check for liquidity 
          //not checking for reserve
-        //  const uniswapData : any=  await fetchLiquidity('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F');
-        //  const sushiSwapData: any = await fetch_LiquiditySushiswap('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F')
+         const uniswapData : any=  await fetchLiquidity('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F');
+         const sushiSwapData: any = await fetch_LiquiditySushiswap('0x6B175474E89094C44Da98b954EedeAC495271d0F','0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' )
 
-        //  const { hasOpportunity, direction, amount } = await calculateArbitrageProfit(uniswapData, sushiSwapData, TOKENS.WETH, TOKENS.DAI);
-        //  if (hasOpportunity) {
+         const { hasOpportunity, direction, amountOut } = await calculateArbitrageProfit(uniswapData, sushiSwapData, TOKENS.WETH, TOKENS.DAI);
+         if (hasOpportunity) {
              await checkContractOwner();
             
             //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
             const assetAddress = `0x6B175474E89094C44Da98b954EedeAC495271d0F`; // WETH address as an example
             const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
-            await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
-            // await initiateArbitrage(assetAddress, loanAmount, direction);
-            // console.log(`Arbitrage opportunity detected: ${direction}! Trigger Smart Contract`);
-        // }
+            // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
+            await initiateArbitrage(assetAddress, loanAmount, direction, amountOut );
+        }
 
     }catch(e: any){
         console.log(e.message);

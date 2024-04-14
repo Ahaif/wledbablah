@@ -21,7 +21,7 @@ export async function sendFlashbotsTransaction(assetAddress: string, loanAmount:
         gasLimit: 1000000n,  // specify a sufficient gas limit
         chainId: (await provider.getNetwork()).chainId
     });
-    const signature = await authSigner.signMessage(ethers.arrayify(ethers.keccak256(signedTransaction)));
+    // const signature = await authSigner.signMessage(ethers.arrayify(ethers.keccak256(signedTransaction)));
 
 
     console.log("Signed transaction:", signedTransaction);
@@ -43,7 +43,7 @@ export async function sendFlashbotsTransaction(assetAddress: string, loanAmount:
         const response = await axios.post(flashbotsRPC, payload, {
             headers: {
                 'Content-Type': 'application/json',
-                'X-Flashbots-Signature': `${authSigner.address}:${signature}`
+                // 'X-Flashbots-Signature': `${authSigner.address}:${signature}`
             }
         });
         console.log('Bundle submitted, response:', response.data);
