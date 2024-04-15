@@ -1,10 +1,12 @@
 import dotenv from 'dotenv';
 import { ethers } from "ethers";
-import { calculateArbitrageProfit, fetchLiquidity, fetch_LiquiditySushiswap } from './dexInteractions';
+import { calculateArbitrageProfit, fetchLiquidity } from './dexInteractions';
 import { DEX_IDENTIFIERS, TOKENS } from './constants';
 import testAbi from './contracts/ABIs/testAbi.json';
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
-import {sendFlashbotsTransaction} from './flashbot';
+import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
+import SushiswapRouterAbi from './contracts/ABIs/SushiswapAbi.json';
+// import {sendFlashbotsTransaction} from './flashbot';
 // import { setupBlocknative } from './monitorMempool';
 
 
@@ -20,28 +22,33 @@ if (!process.env.PRIVATE_KEY) {
 
 
 // connect to fork
-const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+const provider = new ethers.JsonRpcProvider(`https://eth-mainnet.g.alchemy.com/v2/OmlA9If9urbVQICKN-e0t4OjNTVnNNyo`);
+if (!provider) 
+    throw new Error("Provider not set.");
+
 const privateKey = process.env.PRIVATE_KEY || "";
 const signer = new ethers.Wallet(privateKey, provider);
-const contractAddress = `0x76a999d5F7EFDE0a300e710e6f52Fb0A4b61aD58`; // Replace with your contract's address
+const contractAddress = `0xAE246E208ea35B3F23dE72b697D47044FC594D5F`; // Replace with your contract's address
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
+//dexs
+const uniswapRouterContract = new ethers.Contract(DEX_IDENTIFIERS.UNISWAP, UniswapRouterABI.result, provider);
+const SushiswapRouterContract = new ethers.Contract(DEX_IDENTIFIERS.SUSHISWAP, SushiswapRouterAbi.result, provider);
 
-    async function logNetwork() {
-        try {
-            const network = await provider.getNetwork();
-            const blockNumber = await provider.getBlockNumber()
-            console.log(`Connected to network: ${network.name} (${network.chainId})`);
+
+async function logNetwork() {
+     try {
+        const network = await provider.getNetwork();
+        const blockNumber = await provider.getBlockNumber()
+        console.log(`Connected to network: ${network.name} (${network.chainId})`);
             // const bytCode = await provider.getCode(contractAddress);
             // console.log(bytCode);
 
-            console.log(`Block number: ${blockNumber}`);
+        console.log(`Block number: ${blockNumber}`);
         } catch (error) {
             console.error("Error fetching network information:", error);
-        }
     }
-    
-    logNetwork();
+}
     
 // Metamaask set up
 // async function setupProviderAndSigner() {
@@ -84,7 +91,7 @@ async function checkContractOwner() {
 async function initiateArbitrage(assetAddress: string, loanAmount: bigint, direction: string, amountOut: BigInt) {
     try {
         console.log(`Initiating flash loan for asset: ${assetAddress} with amount: ${loanAmount}`);
-        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, direction, '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F', amountOut);
+        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, direction, TOKENS.DAI, TOKENS.WETH, amountOut);
         const receipt = await txResponse.wait();
         // console.log('Transaction receipt:', receipt);
         console.log(`Transaction successful with hash: ${receipt.hash}`);
@@ -100,20 +107,28 @@ async function main() {
     try{
         // setupBlocknative(); listening to mempool
         // await setupProviderAndSigner(); metamask set up
-         //fetch data from uniswap, check for liquidity 
-         //not checking for reserve
-         const uniswapData : any=  await fetchLiquidity('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', '0x6B175474E89094C44Da98b954EedeAC495271d0F');
-         const sushiSwapData: any = await fetch_LiquiditySushiswap('0x6B175474E89094C44Da98b954EedeAC495271d0F','0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' )
+         //fetch data from uniswap, check for liquidity  //not checking for reserve
+        //  await logNetwork();
+        //  await checkContractOwner();
 
-         const { hasOpportunity, direction, amountOut } = await calculateArbitrageProfit(uniswapData, sushiSwapData, TOKENS.WETH, TOKENS.DAI);
+         const amount: BigInt = ethers.parseEther("100000"); // Example: 1 token
+        
+
+         const uniAmountout : bigint=  await fetchLiquidity(TOKENS.DAI, TOKENS.WETH, amount, uniswapRouterContract);
+         const sushiAmountout: bigint = await fetchLiquidity(TOKENS.DAI, TOKENS.WETH, amount, SushiswapRouterContract);
+         if(uniAmountout === BigInt(0) || sushiAmountout === BigInt(0))
+            throw new Error("No liquidity found in one of the dexs");
+
+         const { hasOpportunity, direction, amountOut } = await calculateArbitrageProfit(uniAmountout, sushiAmountout);
          if (hasOpportunity) {
-             await checkContractOwner();
+            console.log(`Arbitrage opportunity detected: ${direction} with profit: ${ethers.formatEther(amountOut.toString())} : DAI`);
+             
             
-            //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
-            const assetAddress = `0x6B175474E89094C44Da98b954EedeAC495271d0F`; // WETH address as an example
-            const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
-            // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
-            await initiateArbitrage(assetAddress, loanAmount, direction, amountOut );
+        //     //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
+        //     const assetAddress = `0x6B175474E89094C44Da98b954EedeAC495271d0F`; // WETH address as an example
+        //     const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
+        //     // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
+        //     await initiateArbitrage(assetAddress, loanAmount, direction, amountOut );
         }
 
     }catch(e: any){

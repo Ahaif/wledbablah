@@ -53,9 +53,11 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
         path[1] = assetOut; // Assuming second token is what you get in return
 
         if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
+            console.log("Executing Uniswap to Sushiswap arbitrage");
             IUniswapRouter(UNISWAP_ROUTER).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
             ISushiswapRouter(SUSHISWAP_ROUTER).swapExactTokensForTokens(IERC20(path[1]).balanceOf(address(this)), amountOutMin, path, address(this), block.timestamp);
         } else {
+            console.log("Executing Sushiswap to Uniswap arbitrage");
             ISushiswapRouter(SUSHISWAP_ROUTER).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
             IUniswapRouter(UNISWAP_ROUTER).swapExactTokensForTokens(IERC20(path[1]).balanceOf(address(this)), amountOutMin, path, address(this), block.timestamp);
         }
