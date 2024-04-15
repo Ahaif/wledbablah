@@ -22,7 +22,7 @@ if (!process.env.PRIVATE_KEY) {
 
 
 // connect to fork
-const provider = new ethers.JsonRpcProvider(`https://eth-mainnet.g.alchemy.com/v2/OmlA9If9urbVQICKN-e0t4OjNTVnNNyo`);
+const provider = new ethers.JsonRpcProvider(`localhost:8545`);
 if (!provider) 
     throw new Error("Provider not set.");
 

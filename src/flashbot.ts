@@ -2,7 +2,7 @@ import { ethers, Wallet, Contract } from "ethers";
 import axios from 'axios';  // Axios is used for HTTP requests
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
 
-const provider = new ethers.JsonRpcProvider("https://eth-mainnet.g.alchemy.com/v2/OmlA9If9urbVQICKN-e0t4OjNTVnNNyo");
+const provider = new ethers.JsonRpcProvider("http://localhost:8545");
 const privateKey = process.env.PRIVATE_KEY || "";
 const signer = new Wallet(privateKey, provider);
 const authSigner = new Wallet(process.env.FLASHBOTS_SIGNER_KEY || ethers.Wallet.createRandom().privateKey);
