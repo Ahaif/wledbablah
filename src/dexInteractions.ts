@@ -10,7 +10,7 @@ import { formatEther, parseEther} from 'ethers/lib.commonjs/utils';
 
 dotenv.config();
 
-const provider = new ethers.JsonRpcProvider(process.env.MAINET_FORK_URL);
+const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
 const privateKey = process.env.PRIVATE_KEY;
 if (!privateKey || !provider) {
   throw new Error("PRIVATE_KEY or provider environment variable is not set.");
@@ -43,7 +43,7 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, amount: Big
 
         const amountsOut = await dexContract.getAmountsOut(amount, [tokenAAddress, tokenBAddress]);
         if (amountsOut && amountsOut[1] && BigInt(amountsOut[1].toString()) > 0) {
-            console.log(`Amount out for token B ${tokenB} in dex: ${ethers.formatEther(amountsOut[1].toString())}`);
+            console.log(`Amount out for token B ${tokenB} in dex: ${ethers.formatUnits(amountsOut[1].toString())}`);
             return BigInt(amountsOut[1].toString()); // Convert the output to a bigint
         } else {
             console.error(`No liquidity available for token pair: ${tokenA} - ${tokenB}`);
@@ -108,7 +108,7 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, amount: Big
 export async function calculateArbitrageProfit(
     amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
-    slippageTolerance: number = 0.01 // Default slippage tolerance set to 1%
+    slippageTolerance: number = 1 // Default slippage tolerance set to 1%
 ): Promise<ArbitrageOpportunityI> {
     try {
         console.log(`Amount out in Uniswap: ${ethers.formatEther(amountOutUniswap.toString())}, Amount out in Sushiswap: ${ethers.formatEther(amountOutSushiswap.toString())}`);
@@ -127,8 +127,8 @@ export async function calculateArbitrageProfit(
         const rawProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap;
         const rawProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap;
 
-        const netProfitSushiswap = rawProfitSushiswap - gasCost;
-        const netProfitUniswap = rawProfitUniswap - gasCost;
+        const netProfitSushiswap : bigint = rawProfitSushiswap - gasCost;
+        const netProfitUniswap : bigint = rawProfitUniswap - gasCost;
 
         console.log(`Potential profit in Sushiswap: ${ethers.formatEther(netProfitSushiswap.toString())}, Potential profit in Uniswap: ${ethers.formatEther(netProfitUniswap.toString())}`);
 

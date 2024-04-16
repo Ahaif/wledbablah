@@ -34,51 +34,48 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
         return "Hello, Arbitrage World!";
     }
 
-   function executeOperation(
-    address asset,
-    uint256 amount,
-    uint256 premium,
-    address initiator,
-    bytes calldata params
+function executeOperation(
+        address asset,
+        uint256 amount,
+        uint256 premium,
+        address initiator,
+        bytes calldata params
     ) external returns (bool) {
-    require(msg.sender == address(POOL), "Caller must be pool");
-    require(initiator == address(this), "Initiator must be this contract");
-    console.log("Initiating Execute operations:");
+        require(msg.sender == address(POOL), "Caller must be pool");
+        require(initiator == address(this), "Initiator must be this contract");
+        console.log("Initiating Execute operations:");
 
-
-    (string memory direction, address assetIn, address assetOut, uint256 Amountout) = abi.decode(params, (string, address, address, uint256));
-        uint256 amountOutMin = Amountout; // Set minimum amount out based on off-chain data for slippage control
+        (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
         address[] memory path = new address[](2);
         path[0] = assetIn;
-        path[1] = assetOut; // Assuming second token is what you get in return
+        path[1] = assetOut;
 
         if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
-            console.log("Executing Uniswap to Sushiswap arbitrage");
+            require(IERC20(assetIn).approve(UNISWAP_ROUTER, amount), "Uniswap approval failed");
             IUniswapRouter(UNISWAP_ROUTER).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
-            ISushiswapRouter(SUSHISWAP_ROUTER).swapExactTokensForTokens(IERC20(path[1]).balanceOf(address(this)), amountOutMin, path, address(this), block.timestamp);
+            require(IERC20(assetOut).approve(SUSHISWAP_ROUTER, IERC20(assetOut).balanceOf(address(this))), "Sushiswap approval failed");
+            ISushiswapRouter(SUSHISWAP_ROUTER).swapExactTokensForTokens(IERC20(assetOut).balanceOf(address(this)), amountOutMin, path, address(this), block.timestamp);
         } else {
-            console.log("Executing Sushiswap to Uniswap arbitrage");
+            require(IERC20(assetIn).approve(SUSHISWAP_ROUTER, amount), "Sushiswap approval failed");
             ISushiswapRouter(SUSHISWAP_ROUTER).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
-            IUniswapRouter(UNISWAP_ROUTER).swapExactTokensForTokens(IERC20(path[1]).balanceOf(address(this)), amountOutMin, path, address(this), block.timestamp);
+            require(IERC20(assetOut).approve(UNISWAP_ROUTER, IERC20(assetOut).balanceOf(address(this))), "Uniswap approval failed");
+            IUniswapRouter(UNISWAP_ROUTER).swapExactTokensForTokens(IERC20(assetOut).balanceOf(address(this)), amountOutMin, path, address(this), block.timestamp);
         }
 
         uint256 amountOwing = amount + premium;
-        uint256 balance = IERC20(asset).balanceOf(address(this));
-        console.log("Amount owing:", amountOwing);
-        require(balance >= amountOwing, "Not enough balance to repay the loan");
-        IERC20(asset).approve(address(POOL), amountOwing);
-    return true;
+        require(IERC20(asset).balanceOf(address(this)) >= amountOwing, "Not enough balance to repay the loan");
+        require(IERC20(asset).approve(address(POOL), amountOwing), "Approval to POOL failed");
+
+        return true;
     }
 
     function initiateFlashLoan(address asset, uint256 amount, string memory direction, address assetIn, address assetOut, uint256 AmountOut) public onlyOwner {
-
         console.log("Initiating flash loan for asset:", asset);
         console.log("Amount requested:", amount);
-         require(asset != address(0), "Asset cannot be zero address");
+        require(asset != address(0), "Asset cannot be zero address");
         require(amount > 0, "Amount must be greater than 0");
 
-         bytes memory params = abi.encode(direction, assetIn, assetOut, AmountOut);
+        bytes memory params = abi.encode(direction, assetIn, assetOut, AmountOut);
         POOL.flashLoanSimple(address(this), asset, amount, params, 0);
     }
-
 }

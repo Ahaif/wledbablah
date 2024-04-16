@@ -22,13 +22,13 @@ if (!process.env.PRIVATE_KEY) {
 
 
 // connect to fork
-const provider = new ethers.JsonRpcProvider(process.env.MAINET_FORK_URL);
+const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
 if (!provider) 
     throw new Error("Provider not set.");
 
 const privateKey = process.env.PRIVATE_KEY || "";
 const signer = new ethers.Wallet(privateKey, provider);
-const contractAddress = `0xAE246E208ea35B3F23dE72b697D47044FC594D5F`; // Replace with your contract's address
+const contractAddress = `0x4c04377f90Eb1E42D845AB21De874803B8773669`; // Replace with your contract's address
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
 //dexs
@@ -88,7 +88,7 @@ async function checkContractOwner() {
 }
 
 
-async function initiateArbitrage(assetAddress: string, loanAmount: bigint, direction: string, amountOut: BigInt) {
+async function initiateArbitrage(assetAddress: string, loanAmount: BigInt, direction: string, amountOut: BigInt) {
     try {
         console.log(`Initiating flash loan for asset: ${assetAddress} with amount: ${loanAmount}`);
         const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, direction, TOKENS.DAI, TOKENS.WETH, amountOut);
@@ -114,8 +114,8 @@ async function main() {
          const amount: BigInt = ethers.parseEther("100000"); // Example: 1 token
         
 
-         const uniAmountout =  await fetchLiquidity(TOKENS.USDT,TOKENS.WETH, amount, uniswapRouterContract);
-         const sushiAmountout = await fetchLiquidity(TOKENS.USDT,TOKENS.WETH, amount, SushiswapRouterContract);
+         const uniAmountout =  await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, uniswapRouterContract);
+         const sushiAmountout = await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, SushiswapRouterContract);
          if(uniAmountout === null || sushiAmountout ===null)
          {
             console.log("Failed to fetch liquidity for one or both tokens.");
@@ -128,10 +128,11 @@ async function main() {
              
             
         //     //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
-        //     const assetAddress = `0x6B175474E89094C44Da98b954EedeAC495271d0F`; // WETH address as an example
-        //     const loanAmount = ethers.parseUnits("1", "ether"); // Requesting 1 E
+            const assetAddress = TOKENS.DAI; // WETH address as an example
+            
         //     // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
-        //     await initiateArbitrage(assetAddress, loanAmount, direction, amountOut );
+            await initiateArbitrage(assetAddress, amount, direction, amountOut );
+
         }
 
     }catch(e: any){
