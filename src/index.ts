@@ -111,29 +111,39 @@ async function main() {
          await logNetwork();
         //  await checkContractOwner();
 
-         const amount: BigInt = ethers.parseEther("100000"); // Example: 1 token
+         let amount: BigInt = ethers.parseEther("10"); // Example: 1 token
         
 
-         const uniAmountout =  await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, uniswapRouterContract);
-         const sushiAmountout = await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, SushiswapRouterContract);
+         const uniAmountout  =  await fetchLiquidity(TOKENS.WETH, TOKENS.DAI,amount, uniswapRouterContract);
+       
+         const sushiAmountout = await fetchLiquidity(TOKENS.WETH, TOKENS.DAI, amount, SushiswapRouterContract);
          if(uniAmountout === null || sushiAmountout ===null)
          {
             console.log("Failed to fetch liquidity for one or both tokens.");
             return; // Exit or handle this scenario appropriately.
          }
+         console.log(ethers.formatUnits(uniAmountout, 18));
+        console.log(ethers.formatUnits(sushiAmountout, 18));
+        // console.log(ethers.formatEther(sushiAmountout.toString()));
 
-         const { hasOpportunity, direction, amountOut } = await calculateArbitrageProfit(uniAmountout, sushiAmountout);
+        // amount = ethers.parseEther("1000000"); // Example: 1 token
+
+         const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout);
          if (hasOpportunity) {
-            console.log(`Arbitrage opportunity detected: ${direction} with profit: ${ethers.formatEther(amountOut.toString())} : DAI`);
-             
-            
+            console.log("Amount to use for swap AmountOutmin: ", amountOutMin.toString());
+            console.log(`Arbitrage opportunity detected: ${direction}`);
+            // const amountOutMin = direction === 'UNISWAP_TO_SUSHISWAP' ? amountOutMinUniswap : amountOutMinSushiswap;
+            console.log(`Amount to use for swap AmountOutmin: ${ethers.formatEther(amountOutMin.toString())}`);
+           
+            await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin);
+        }
         //     //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
             const assetAddress = TOKENS.DAI; // WETH address as an example
             
         //     // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
-            await initiateArbitrage(assetAddress, amount, direction, amountOut );
+            // await initiateArbitrage(assetAddress, amount, direction, amountOut );
 
-        }
+        
 
     }catch(e: any){
         console.log(e.message);
@@ -143,5 +153,6 @@ async function main() {
 }
 
 main().catch(console.error);
+
 
 

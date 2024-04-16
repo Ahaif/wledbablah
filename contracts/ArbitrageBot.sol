@@ -34,40 +34,52 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
         return "Hello, Arbitrage World!";
     }
 
+function executeSwap(
+    address assetIn,
+    address assetOut,
+    uint256 amount,
+    uint256 amountOutMin,
+    address routerAddress
+) internal {
+
+    address[] memory path = new address[](2);
+    path[0] = assetIn;
+    path[1] = assetOut; 
+
+    require(IERC20(assetIn).approve(routerAddress, amount), "Approval failed");
+    IUniswapRouter(routerAddress).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
+}
+
 function executeOperation(
-        address asset,
-        uint256 amount,
-        uint256 premium,
-        address initiator,
-        bytes calldata params
-    ) external returns (bool) {
-        require(msg.sender == address(POOL), "Caller must be pool");
-        require(initiator == address(this), "Initiator must be this contract");
-        console.log("Initiating Execute operations:");
+    address asset,
+    uint256 amount,
+    uint256 premium,
+    address initiator,
+    bytes calldata params
+) external returns (bool) {
+    require(msg.sender == address(POOL), "Caller must be pool");
+    require(initiator == address(this), "Initiator must be this contract");
 
-        (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
-        address[] memory path = new address[](2);
-        path[0] = assetIn;
-        path[1] = assetOut;
+    (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
 
-        if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
-            require(IERC20(assetIn).approve(UNISWAP_ROUTER, amount), "Uniswap approval failed");
-            IUniswapRouter(UNISWAP_ROUTER).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
-            require(IERC20(assetOut).approve(SUSHISWAP_ROUTER, IERC20(assetOut).balanceOf(address(this))), "Sushiswap approval failed");
-            ISushiswapRouter(SUSHISWAP_ROUTER).swapExactTokensForTokens(IERC20(assetOut).balanceOf(address(this)), amountOutMin, path, address(this), block.timestamp);
-        } else {
-            require(IERC20(assetIn).approve(SUSHISWAP_ROUTER, amount), "Sushiswap approval failed");
-            ISushiswapRouter(SUSHISWAP_ROUTER).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
-            require(IERC20(assetOut).approve(UNISWAP_ROUTER, IERC20(assetOut).balanceOf(address(this))), "Uniswap approval failed");
-            IUniswapRouter(UNISWAP_ROUTER).swapExactTokensForTokens(IERC20(assetOut).balanceOf(address(this)), amountOutMin, path, address(this), block.timestamp);
-        }
-
-        uint256 amountOwing = amount + premium;
-        require(IERC20(asset).balanceOf(address(this)) >= amountOwing, "Not enough balance to repay the loan");
-        require(IERC20(asset).approve(address(POOL), amountOwing), "Approval to POOL failed");
-
-        return true;
+    if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
+        executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
+        executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
+    } else {
+        executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
+        executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
     }
+
+    finalizeOperation(asset, amount, premium);
+    return true;
+}
+
+function finalizeOperation(address asset, uint256 amount, uint256 premium) internal {
+    uint256 amountOwing = amount + premium;
+    require(IERC20(asset).balanceOf(address(this)) >= amountOwing, "Not enough balance to repay the loan");
+    require(IERC20(asset).approve(address(POOL), amountOwing), "Approval to POOL failed");
+}
+
 
     function initiateFlashLoan(address asset, uint256 amount, string memory direction, address assetIn, address assetOut, uint256 AmountOut) public onlyOwner {
         console.log("Initiating flash loan for asset:", asset);
