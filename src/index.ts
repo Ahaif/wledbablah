@@ -22,7 +22,7 @@ if (!process.env.PRIVATE_KEY) {
 
 
 // connect to fork
-const provider = new ethers.JsonRpcProvider(`localhost:8545`);
+const provider = new ethers.JsonRpcProvider(process.env.MAINET_FORK_URL);
 if (!provider) 
     throw new Error("Provider not set.");
 
@@ -108,16 +108,19 @@ async function main() {
         // setupBlocknative(); listening to mempool
         // await setupProviderAndSigner(); metamask set up
          //fetch data from uniswap, check for liquidity  //not checking for reserve
-        //  await logNetwork();
+         await logNetwork();
         //  await checkContractOwner();
 
          const amount: BigInt = ethers.parseEther("100000"); // Example: 1 token
         
 
-         const uniAmountout : bigint=  await fetchLiquidity(TOKENS.DAI, TOKENS.WETH, amount, uniswapRouterContract);
-         const sushiAmountout: bigint = await fetchLiquidity(TOKENS.DAI, TOKENS.WETH, amount, SushiswapRouterContract);
-         if(uniAmountout === BigInt(0) || sushiAmountout === BigInt(0))
-            throw new Error("No liquidity found in one of the dexs");
+         const uniAmountout =  await fetchLiquidity(TOKENS.USDT,TOKENS.WETH, amount, uniswapRouterContract);
+         const sushiAmountout = await fetchLiquidity(TOKENS.USDT,TOKENS.WETH, amount, SushiswapRouterContract);
+         if(uniAmountout === null || sushiAmountout ===null)
+         {
+            console.log("Failed to fetch liquidity for one or both tokens.");
+            return; // Exit or handle this scenario appropriately.
+         }
 
          const { hasOpportunity, direction, amountOut } = await calculateArbitrageProfit(uniAmountout, sushiAmountout);
          if (hasOpportunity) {

@@ -10,7 +10,7 @@ import { formatEther, parseEther} from 'ethers/lib.commonjs/utils';
 
 dotenv.config();
 
-const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+const provider = new ethers.JsonRpcProvider(process.env.MAINET_FORK_URL);
 const privateKey = process.env.PRIVATE_KEY;
 if (!privateKey || !provider) {
   throw new Error("PRIVATE_KEY or provider environment variable is not set.");
@@ -31,20 +31,30 @@ const SushiswapRouterContract = new ethers.Contract(DEX_IDENTIFIERS.SUSHISWAP, S
 //     return BigNumber.from(balance).gte(BigNumber.from(amountNeeded));
 // }
 
+export async function fetchLiquidity(tokenA: string, tokenB: string, amount: BigInt, dexContract: ethers.Contract): Promise<bigint | null> {
+    try {
+        const tokenAAddress = ethers.getAddress(tokenA);
+        const tokenBAddress = ethers.getAddress(tokenB);
+        // Check if the contract has the getAmountsOut function properly.
+        if (!dexContract.getAmountsOut) {
+            console.error("getAmountsOut function is not available on the provided contract.");
+            return null; // Indicates the function or contract is not properly set.
+        }
 
-export async function fetchLiquidity(tokenA:string,tokenB: string, amount: BigInt, dexContract: ethers.Contract) {
-  
-    // Ensure both token addresses are checksummed
-    const tokenAAddress = ethers.getAddress(tokenA);
-    const tokenBAddress = ethers.getAddress(tokenB);
-try {
-    const amountsOut  = await dexContract.getAmountsOut(amount, [tokenAAddress, tokenBAddress]);
-    console.log(`Amount out for token ${tokenB} in dex  : ${ethers.formatEther(amountsOut[1])}`);
-    return amountsOut[1];
-  } catch (error) {
-    console.error(`Error fetching liquidity from dex: ${error}`);
-  }
+        const amountsOut = await dexContract.getAmountsOut(amount, [tokenAAddress, tokenBAddress]);
+        if (amountsOut && amountsOut[1] && BigInt(amountsOut[1].toString()) > 0) {
+            console.log(`Amount out for token B ${tokenB} in dex: ${ethers.formatEther(amountsOut[1].toString())}`);
+            return BigInt(amountsOut[1].toString()); // Convert the output to a bigint
+        } else {
+            console.error(`No liquidity available for token pair: ${tokenA} - ${tokenB}`);
+            return null; // No liquidity found
+        }
+    } catch (error) {
+        console.error(`Error fetching liquidity from dex: ${error}`);
+        return null; // Return null on failure
+    }
 }
+
 
 
 
@@ -153,5 +163,4 @@ export async function calculateArbitrageProfit(
         };
     }
 }
-
 
