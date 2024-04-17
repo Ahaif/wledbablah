@@ -136,7 +136,7 @@ async function main() {
             console.log(`Amount to use for swap AmountOutmin: ${ethers.formatEther(amountOutMin.toString())}`);
 
             
-            amount = ethers.parseEther("10000"); // Example: 1 token
+            amount = ethers.parseEther("10000000"); // Example: 1 token
             await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin);
         }
         //     //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
