@@ -101,50 +101,47 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, amount: Big
 //   }
 
 // }
-
-
 export async function calculateArbitrageProfit(
     amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
     slippageTolerance: number = 5 // Slippage tolerance set to 5%
 ): Promise<ArbitrageOpportunityI> {
     try {
-
         console.log("-------------------------------");
         console.log("Calculating arbitrage profit...");
         const feeData = await provider.getFeeData();
         const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
-        const estimatedGasLimit = BigInt(200000); // Example: estimated gas for a typical swap transaction
-        const gasCost = adjustedGasPrice * estimatedGasLimit;
+        const estimatedGasLimit = BigInt(200000); // Estimating gas for one swap
+        const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2); // Double the gas cost for two swaps
+ 
 
-      
+        // Adjust for slippage tolerance on both swaps
+        const slippageFactor = BigInt(100 - slippageTolerance);
+        const effectiveAmountOutUniswap = amountOutUniswap * slippageFactor / BigInt(100);
+        const effectiveAmountOutSushiswap = amountOutSushiswap * slippageFactor / BigInt(100);
 
-        // Adjust for slippage tolerance
-        const slippageFactor = BigInt(Math.round(100 - slippageTolerance));
-        const effectiveAmountOutUniswap = (amountOutUniswap * slippageFactor) / BigInt(100);
-        const effectiveAmountOutSushiswap = (amountOutSushiswap * slippageFactor) / BigInt(100);
 
-        // Calculate net profits by subtracting estimated gas costs
-        const netProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap - gasCost;
-        const netProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap - gasCost;
+        // Calculate net profits accounting for both swaps
+        const grossProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap;
+        const grossProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap;
+        const netProfitUniswap = grossProfitUniswap - totalGasCost;
+        const netProfitSushiswap = grossProfitSushiswap - totalGasCost;
 
-        // console.log(`Effective Amount Out Uniswap: ${ethers.formatEther(effectiveAmountOutUniswap.toString())}, Sushiswap: ${ethers.formatEther(effectiveAmountOutSushiswap.toString())}`);
-        console.log(`Gas cost: ${ethers.formatEther(gasCost.toString())}`);
-        console.log(`Net Profit Uniswap: ${ethers.formatEther(netProfitUniswap)}, Sushiswap: ${ethers.formatEther(netProfitUniswap)}`);
+        console.log(`Gas cost (total for two swaps): ${ethers.formatEther(totalGasCost.toString())}`);
+        console.log(`Net Profit Uniswap: ${ethers.formatEther(netProfitUniswap.toString())}, Sushiswap: ${ethers.formatEther(netProfitSushiswap.toString())}`);
         console.log("-------------------------------");
+
         if (netProfitUniswap > 0n) {
             return {
                 hasOpportunity: true,
                 direction: 'UNISWAP_TO_SUSHISWAP',
                 amountOutMin: effectiveAmountOutUniswap,
-
             };
         } else if (netProfitSushiswap > 0n) {
             return {
                 hasOpportunity: true,
                 direction: 'SUSHISWAP_TO_UNISWAP',
                 amountOutMin: effectiveAmountOutSushiswap,
-            
             };
         } else {
             console.log("No arbitrage opportunity found.");
@@ -152,7 +149,6 @@ export async function calculateArbitrageProfit(
                 hasOpportunity: false,
                 direction: 'NONE',
                 amountOutMin: 0n,
-                
             };
         }
     } catch (error) {
@@ -161,8 +157,6 @@ export async function calculateArbitrageProfit(
             hasOpportunity: false,
             direction: 'NONE',
             amountOutMin: 0n,
-           
         };
     }
 }
-

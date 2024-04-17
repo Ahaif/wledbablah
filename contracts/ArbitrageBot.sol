@@ -86,6 +86,7 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
     function finalizeOperation(address asset, uint256 amount, uint256 premium) internal {
         console.log("amount borrowed:", amount);
         uint256 amountOwing = amount + premium;
+        console.log("premium:", premium);
         console.log("amount owing:", amountOwing);
         require(IERC20(asset).balanceOf(address(this)) >= amountOwing, "Not enough balance to repay the loan");
         require(IERC20(asset).approve(address(POOL), amountOwing), "Approval to POOL failed");

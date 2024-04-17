@@ -133,7 +133,7 @@ async function main() {
          const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout);
          if (hasOpportunity) {
            
-            amount = ethers.parseEther("10000000"); // Loan amount
+            amount = ethers.parseEther("10000"); // Loan amount
             const fundsb = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
            
             console.log(`Contract funds BEFORE arbitrage: ${ethers.formatEther(fundsb.toString())} DAI`);
