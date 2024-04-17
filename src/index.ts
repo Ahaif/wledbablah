@@ -82,6 +82,8 @@ async function checkContractOwner() {
         console.log(`The owner of the contract is: ${ownerAddress}`);
         const greeting = await arbitrageBot.getGreeting();
         console.log(`Contract Greeting: ${greeting}`);
+        const funds = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
+        console.log(`Contract funds: ${ethers.formatEther(funds.toString())} DAI`);
     } catch (error) {
         console.error("Error calling the contract:", error);
     }
@@ -109,7 +111,9 @@ async function main() {
         // await setupProviderAndSigner(); metamask set up
        
         //  await logNetwork();
-        //  await checkContractOwner();
+         await checkContractOwner();
+        console.log("Starting Weldbablah");
+        console.log("*********************************");
 
          let amount: BigInt = ethers.parseEther("10000"); // token amount to check token Out amount
 
@@ -122,22 +126,28 @@ async function main() {
             return; // Exit or handle this scenario appropriately.
          }
 
-        console.log(`initial ammount: ${ethers.formatUnits(uniAmountout, 18)}`);
-        console.log(`initial ammount: ${ethers.formatUnits(sushiAmountout, 18)}`);
+        console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout, 18)} WETH`);
+        console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout, 18)} WETH`);
        
 
          const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout);
          if (hasOpportunity) {
-            console.log(`Effective AmountOut to swap , ${ethers.formatEther(amountOutMin.toString())}-------> ${direction}` );
+           
             amount = ethers.parseEther("10000000"); // Loan amount
+            const fundsb = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
+           
+            console.log(`Contract funds BEFORE arbitrage: ${ethers.formatEther(fundsb.toString())} DAI`);
             await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin);
+             const fundsA = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
+            console.log(`Contract funds AFTER  arbitrage: ${ethers.formatEther(fundsA.toString())} DAI`);
+            
         }
        //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
        // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
         // await initiateArbitrage(assetAddress, amount, direction, amountOut );
 
         
-
+        console.log("*********************************");
     }catch(e: any){
         console.log(e.message);
         console.log("Error in main");

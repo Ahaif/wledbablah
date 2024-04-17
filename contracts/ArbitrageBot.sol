@@ -34,7 +34,7 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
         return "Hello, Arbitrage World!";
     }
 
-      function checkTokenBalance(address tokenAddress) public view returns (uint256) {
+    function checkTokenBalance(address tokenAddress) public view returns (uint256) {
         IERC20 token = IERC20(tokenAddress);
         return token.balanceOf(address(this));
     }
@@ -101,4 +101,7 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
             bytes memory params = abi.encode(direction, assetIn, assetOut, AmountOut);
             POOL.flashLoanSimple(address(this), asset, amount, params, 0);
         }
+
+
+        
     }

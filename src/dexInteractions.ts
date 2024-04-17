@@ -128,9 +128,9 @@ export async function calculateArbitrageProfit(
         const netProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap - gasCost;
         const netProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap - gasCost;
 
-        console.log(`Effective Amount Out Uniswap: ${ethers.formatEther(effectiveAmountOutUniswap.toString())}, Sushiswap: ${ethers.formatEther(effectiveAmountOutSushiswap.toString())}`);
+        // console.log(`Effective Amount Out Uniswap: ${ethers.formatEther(effectiveAmountOutUniswap.toString())}, Sushiswap: ${ethers.formatEther(effectiveAmountOutSushiswap.toString())}`);
         console.log(`Gas cost: ${ethers.formatEther(gasCost.toString())}`);
-        console.log(`Net Profit Uniswap: ${netProfitUniswap}, Sushiswap: ${netProfitSushiswap}`);
+        console.log(`Net Profit Uniswap: ${ethers.formatEther(netProfitUniswap)}, Sushiswap: ${ethers.formatEther(netProfitUniswap)}`);
         console.log("-------------------------------");
         if (netProfitUniswap > 0n) {
             return {
@@ -147,6 +147,7 @@ export async function calculateArbitrageProfit(
             
             };
         } else {
+            console.log("No arbitrage opportunity found.");
             return {
                 hasOpportunity: false,
                 direction: 'NONE',
