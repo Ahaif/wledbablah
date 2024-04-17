@@ -111,12 +111,12 @@ async function main() {
          await logNetwork();
         //  await checkContractOwner();
 
-         let amount: BigInt = ethers.parseEther("10"); // Example: 1 token
+         let amount: BigInt = ethers.parseEther("100000"); // Example: 1 token
         
 
-         const uniAmountout  =  await fetchLiquidity(TOKENS.WETH, TOKENS.DAI,amount, uniswapRouterContract);
+         const uniAmountout  =  await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, uniswapRouterContract);
        
-         const sushiAmountout = await fetchLiquidity(TOKENS.WETH, TOKENS.DAI, amount, SushiswapRouterContract);
+         const sushiAmountout = await fetchLiquidity( TOKENS.DAI,TOKENS.WETH, amount, SushiswapRouterContract);
          if(uniAmountout === null || sushiAmountout ===null)
          {
             console.log("Failed to fetch liquidity for one or both tokens.");
@@ -134,7 +134,9 @@ async function main() {
             console.log(`Arbitrage opportunity detected: ${direction}`);
             // const amountOutMin = direction === 'UNISWAP_TO_SUSHISWAP' ? amountOutMinUniswap : amountOutMinSushiswap;
             console.log(`Amount to use for swap AmountOutmin: ${ethers.formatEther(amountOutMin.toString())}`);
-           
+
+            
+            amount = ethers.parseEther("10000"); // Example: 1 token
             await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin);
         }
         //     //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
