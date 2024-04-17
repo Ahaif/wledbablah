@@ -106,9 +106,12 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, amount: Big
 export async function calculateArbitrageProfit(
     amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
-    slippageTolerance: number = 50 // Slippage tolerance set to 5%
+    slippageTolerance: number = 5 // Slippage tolerance set to 5%
 ): Promise<ArbitrageOpportunityI> {
     try {
+
+        console.log("-------------------------------");
+        console.log("Calculating arbitrage profit...");
         const feeData = await provider.getFeeData();
         const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
         const estimatedGasLimit = BigInt(200000); // Example: estimated gas for a typical swap transaction
@@ -125,10 +128,10 @@ export async function calculateArbitrageProfit(
         const netProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap - gasCost;
         const netProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap - gasCost;
 
-        console.log(`Effective Amount Out Uniswap: ${effectiveAmountOutUniswap}, Sushiswap: ${effectiveAmountOutSushiswap}`);
-        console.log(`Gas cost: ${gasCost}`);
+        console.log(`Effective Amount Out Uniswap: ${ethers.formatEther(effectiveAmountOutUniswap.toString())}, Sushiswap: ${ethers.formatEther(effectiveAmountOutSushiswap.toString())}`);
+        console.log(`Gas cost: ${ethers.formatEther(gasCost.toString())}`);
         console.log(`Net Profit Uniswap: ${netProfitUniswap}, Sushiswap: ${netProfitSushiswap}`);
-
+        console.log("-------------------------------");
         if (netProfitUniswap > 0n) {
             return {
                 hasOpportunity: true,

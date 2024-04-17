@@ -107,43 +107,34 @@ async function main() {
     try{
         // setupBlocknative(); listening to mempool
         // await setupProviderAndSigner(); metamask set up
-         //fetch data from uniswap, check for liquidity  //not checking for reserve
-         await logNetwork();
+       
+        //  await logNetwork();
         //  await checkContractOwner();
 
-         let amount: BigInt = ethers.parseEther("100000"); // Example: 1 token
-        
+         let amount: BigInt = ethers.parseEther("10000"); // token amount to check token Out amount
+
 
          const uniAmountout  =  await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, uniswapRouterContract);
-       
          const sushiAmountout = await fetchLiquidity( TOKENS.DAI,TOKENS.WETH, amount, SushiswapRouterContract);
          if(uniAmountout === null || sushiAmountout ===null)
          {
             console.log("Failed to fetch liquidity for one or both tokens.");
             return; // Exit or handle this scenario appropriately.
          }
-         console.log(ethers.formatUnits(uniAmountout, 18));
-        console.log(ethers.formatUnits(sushiAmountout, 18));
-        // console.log(ethers.formatEther(sushiAmountout.toString()));
 
-        // amount = ethers.parseEther("1000000"); // Example: 1 token
+        console.log(`initial ammount: ${ethers.formatUnits(uniAmountout, 18)}`);
+        console.log(`initial ammount: ${ethers.formatUnits(sushiAmountout, 18)}`);
+       
 
          const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout);
          if (hasOpportunity) {
-            console.log("Amount to use for swap AmountOutmin: ", amountOutMin.toString());
-            console.log(`Arbitrage opportunity detected: ${direction}`);
-            // const amountOutMin = direction === 'UNISWAP_TO_SUSHISWAP' ? amountOutMinUniswap : amountOutMinSushiswap;
-            console.log(`Amount to use for swap AmountOutmin: ${ethers.formatEther(amountOutMin.toString())}`);
-
-            
-            amount = ethers.parseEther("10000000"); // Example: 1 token
+            console.log(`Effective AmountOut to swap , ${ethers.formatEther(amountOutMin.toString())}-------> ${direction}` );
+            amount = ethers.parseEther("10000000"); // Loan amount
             await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin);
         }
-        //     //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
-            const assetAddress = TOKENS.DAI; // WETH address as an example
-            
-        //     // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
-            // await initiateArbitrage(assetAddress, amount, direction, amountOut );
+       //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'
+       // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
+        // await initiateArbitrage(assetAddress, amount, direction, amountOut );
 
         
 
