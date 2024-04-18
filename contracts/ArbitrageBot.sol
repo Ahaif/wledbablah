@@ -45,14 +45,18 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
         uint256 amount,
         uint256 amountOutMin,
         address routerAddress
-    ) internal {
+    ) internal returns (uint256[] memory amountOutAfterSwap){
 
         address[] memory path = new address[](2);
         path[0] = assetIn;
         path[1] = assetOut; 
 
+        uint256[] memory amountOutPath = new uint256[](2);
+
+
         require(IERC20(assetIn).approve(routerAddress, amount), "Approval failed");
-        IUniswapRouter(routerAddress).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
+        amountOutPath = IUniswapRouter(routerAddress).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
+        return amountOutPath;
     }
 
     function executeOperation(
@@ -64,21 +68,25 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
     ) external returns (bool) {
         require(msg.sender == address(POOL), "Caller must be pool");
         require(initiator == address(this), "Initiator must be this contract");
+        uint256[] memory  amountOutAfterSwap;
 
         (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
 
         if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
-            executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
-            console.log("first swap done byed from uniswap and ready tp sell on sushiswap");
-            executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
+            
+            amountOutAfterSwap = executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
+            console.log("BUY IN UNISWAP anout Out of ETH : ", amountOutAfterSwap[1]);
+            amountOutAfterSwap =  executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
+            console.log("SELL IN SUSHISWAP amoutOut of DAI : ", amountOutAfterSwap[1]);
      
         } else {
-            executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
-            console.log("first swap done byed from sushiswap and ready to sell on uniswap");
-            executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
+            amountOutAfterSwap =executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
+             console.log("BUY IN SUSHISWAP amountOut from ETH : ", amountOutAfterSwap[1]);
+            amountOutAfterSwap =executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
+             console.log("SELL IN UNISWAP amountOut from DAI: ", amountOutAfterSwap[1]);
         }
         console.log("Token Balance after swap");
-        console.log(checkTokenBalance(assetIn));
+      
         finalizeOperation(asset, amount, premium);
         return true;
     }

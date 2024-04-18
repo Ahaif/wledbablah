@@ -28,7 +28,7 @@ if (!provider)
 
 const privateKey = process.env.PRIVATE_KEY || "";
 const signer = new ethers.Wallet(privateKey, provider);
-const contractAddress = `0x4c04377f90Eb1E42D845AB21De874803B8773669`; // Replace with your contract's address
+const contractAddress = `0xf93b0549cD50c849D792f0eAE94A598fA77C7718`; // Replace with your contract's address
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
 //dexs
@@ -92,7 +92,7 @@ async function checkContractOwner() {
 
 async function initiateArbitrage(assetAddress: string, loanAmount: BigInt, direction: string, amountOut: BigInt) {
     try {
-        console.log(`Initiating flash loan for asset: ${assetAddress} with amount: ${loanAmount}`);
+        console.log(`Initiating flash loan for asset: ${assetAddress} with amount: ${ethers.formatEther(loanAmount.toString())} DAI`);
         const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, direction, TOKENS.DAI, TOKENS.WETH, amountOut);
         const receipt = await txResponse.wait();
         // console.log('Transaction receipt:', receipt);
@@ -115,7 +115,7 @@ async function main() {
         console.log("Starting Weldbablah");
         console.log("*********************************");
 
-         let amount: BigInt = ethers.parseEther("10000"); // token amount to check token Out amount
+         let amount: BigInt = ethers.parseEther("100000"); // token amount to check token Out amount
 
 
          const uniAmountout  =  await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, uniswapRouterContract);
@@ -129,15 +129,16 @@ async function main() {
         console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout, 18)} WETH`);
         console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout, 18)} WETH`);
        
+        const loanAmount = ethers.parseEther("10000000"); // Loan amount
 
-         const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout);
+         const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout, loanAmount);
          if (hasOpportunity) {
            
-            amount = ethers.parseEther("10000"); // Loan amount
+            
             const fundsb = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
            
             console.log(`Contract funds BEFORE arbitrage: ${ethers.formatEther(fundsb.toString())} DAI`);
-            await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin);
+            await initiateArbitrage(TOKENS.DAI, loanAmount, direction, amountOutMin);
              const fundsA = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
             console.log(`Contract funds AFTER  arbitrage: ${ethers.formatEther(fundsA.toString())} DAI`);
             
