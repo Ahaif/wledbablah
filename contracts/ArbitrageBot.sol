@@ -75,27 +75,30 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
         if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
             
             amountOutAfterSwap = executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
-            console.log("BUY IN UNISWAP anout Out of ETH : ", amountOutAfterSwap[1]);
+            console.log("swap DAI IN UNISWAP for WETH : ", amountOutAfterSwap[1]/ 1e18);
+            console.log(" anout Out of DAI Afetr swap WETH : ", amountOutAfterSwap[0]/ 1e18);
             amountOutAfterSwap =  executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
-            console.log("SELL IN SUSHISWAP amoutOut of DAI : ", amountOutAfterSwap[1]);
+            console.log("SELL WETH in SUSHISWAP for DAI : ", amountOutAfterSwap[1]/ 1e18);
      
         } else {
             amountOutAfterSwap =executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
-             console.log("BUY IN SUSHISWAP amountOut from ETH : ", amountOutAfterSwap[1]);
+             console.log("BUY IN SUSHISWAP amountOut from ETH : ", amountOutAfterSwap[1]/ 1e18);
             amountOutAfterSwap =executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
-             console.log("SELL IN UNISWAP amountOut from DAI: ", amountOutAfterSwap[1]);
+             console.log("SELL IN UNISWAP amountOut from DAI: ", amountOutAfterSwap[1]/ 1e18);
         }
-        console.log("Token Balance after swap");
+        
+
       
         finalizeOperation(asset, amount, premium);
         return true;
     }
 
     function finalizeOperation(address asset, uint256 amount, uint256 premium) internal {
-        console.log("amount borrowed:", amount);
+        console.log("amount borrowed:", amount/ 1e18);
         uint256 amountOwing = amount + premium;
-        console.log("premium:", premium);
-        console.log("amount owing:", amountOwing);
+        console.log("premium:", premium/ 1e18);
+        console.log("amount owing:", amountOwing/ 1e18);
+        console.log("Token Balance after swap", checkTokenBalance(address(this))/ 1e18);
         require(IERC20(asset).balanceOf(address(this)) >= amountOwing, "Not enough balance to repay the loan");
         require(IERC20(asset).approve(address(POOL), amountOwing), "Approval to POOL failed");
     }
