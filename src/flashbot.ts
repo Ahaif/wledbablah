@@ -7,7 +7,7 @@ const privateKey = process.env.PRIVATE_KEY || "";
 const signer = new Wallet(privateKey, provider);
 const authSigner = new Wallet(process.env.FLASHBOTS_SIGNER_KEY || ethers.Wallet.createRandom().privateKey);
 
-const contractAddress = "0xAE246E208ea35B3F23dE72b697D47044FC594D5F";
+const contractAddress = "0xa1e757125a93160e6dcaD78af4641e6796C4463e";
 const arbitrageBot = new Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
 export async function sendFlashbotsTransaction(assetAddress: string, loanAmount: string, direction: string) {

@@ -59,7 +59,7 @@ async function fundContractWithDAI(contractAddress: string, daiAmount: string) {
 
 async function main() {
     try{
-        const contractAddress = "0xf93b0549cD50c849D792f0eAE94A598fA77C7718"; // Replace with your contract's address
+        const contractAddress = "0xa1e757125a93160e6dcaD78af4641e6796C4463e"; // Replace with your contract's address
         await fundContractWithDAI(contractAddress, "1000"); // Amount of DAI you want to transfer
     }
     catch(error : any)

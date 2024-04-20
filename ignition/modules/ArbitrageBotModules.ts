@@ -5,8 +5,8 @@ import "@nomicfoundation/hardhat-ignition";
 
 const ArbitrageBotModule = buildModule("ArbitrageBotModule", (m) => {
   // Assuming your ArbitrageBot constructor takes an initialOwner address as a parameter
-  const initialOwner = m.getParameter("initialOwner", "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
-  const addressesProvider = m.getParameter("addressesProvider", "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"); // Aave V3 Mainnet Addresses Provider
+  const initialOwner = m.getParameter("initialOwner", "0xF1AB3c15a55fBDcd8b6275029d114a4B7a554d96");
+  const addressesProvider = m.getParameter("addressesProvider", "0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A"); // Aave V3 Mainnet Addresses Provider
 
   const arbitrageBot = m.contract("ArbitrageBot", [initialOwner, addressesProvider]);
 

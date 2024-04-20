@@ -22,13 +22,13 @@ if (!process.env.PRIVATE_KEY) {
 
 
 // connect to fork
-const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+const provider = new ethers.JsonRpcProvider(process.env.MAINNET_FORK_URL);
 if (!provider) 
     throw new Error("Provider not set.");
 
 const privateKey = process.env.PRIVATE_KEY || "";
 const signer = new ethers.Wallet(privateKey, provider);
-const contractAddress = `0xf93b0549cD50c849D792f0eAE94A598fA77C7718`; // Replace with your contract's address
+const contractAddress = `0xa1e757125a93160e6dcaD78af4641e6796C4463e`; // Replace with your contract's address
 const arbitrageBot = new ethers.Contract(contractAddress, ArbitrageBotModuleABI.abi, signer);
 
 //dexs
@@ -110,21 +110,21 @@ async function main() {
         // setupBlocknative(); listening to mempool
         // await setupProviderAndSigner(); metamask set up
        
-        //  await logNetwork();
-         await checkContractOwner();
+         await logNetwork();
+        //  await checkContractOwner();
         console.log("Starting Weldbablah");
         console.log("*********************************");
 
          let amount: BigInt = ethers.parseEther("10000"); // token amount to check token Out amount
 
 
-         const uniAmountout  =  await fetchLiquidity(TOKENS.WETH, TOKENS.DAI, amount, uniswapRouterContract);
+         const uniAmountout  =  await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, uniswapRouterContract);
          if(uniAmountout === null)
          {
             console.log("Failed to fetch liquidity in uniswap.");
             return; // Exit or handle this scenario appropriately.
          }
-         const sushiAmountout = await fetchLiquidity( TOKENS.WETH, TOKENS.DAI, amount, SushiswapRouterContract);
+         const sushiAmountout = await fetchLiquidity( TOKENS.DAI,TOKENS.WETH,  amount, SushiswapRouterContract);
          if(sushiAmountout === null)
          {
             console.log("Failed to fetch liquidity in sushiswap.");
