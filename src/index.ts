@@ -118,11 +118,16 @@ async function main() {
          let amount: BigInt = ethers.parseEther("10000"); // token amount to check token Out amount
 
 
-         const uniAmountout  =  await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, uniswapRouterContract);
-         const sushiAmountout = await fetchLiquidity( TOKENS.DAI,TOKENS.WETH, amount, SushiswapRouterContract);
-         if(uniAmountout === null || sushiAmountout ===null)
+         const uniAmountout  =  await fetchLiquidity(TOKENS.WETH, TOKENS.DAI, amount, uniswapRouterContract);
+         if(uniAmountout === null)
          {
-            console.log("Failed to fetch liquidity for one or both tokens.");
+            console.log("Failed to fetch liquidity in uniswap.");
+            return; // Exit or handle this scenario appropriately.
+         }
+         const sushiAmountout = await fetchLiquidity( TOKENS.WETH, TOKENS.DAI, amount, SushiswapRouterContract);
+         if(sushiAmountout === null)
+         {
+            console.log("Failed to fetch liquidity in sushiswap.");
             return; // Exit or handle this scenario appropriately.
          }
 

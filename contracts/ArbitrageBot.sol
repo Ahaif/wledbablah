@@ -88,7 +88,8 @@ contract ArbitrageBot is ReentrancyGuard, Ownable{
             amountOutAfterSwap =executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOut, UNISWAP_ROUTER);
              console.log("SELL IN UNISWAP amountOut from DAI: ", amountOutAfterSwap[1] / 1e18);
         }
-        console.log("Token Balance after swap");
+        
+
       
         finalizeOperation(asset, amount, premium);
         return true;
