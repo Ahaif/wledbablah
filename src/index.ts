@@ -115,7 +115,7 @@ async function main() {
         console.log("Starting Weldbablah");
         console.log("*********************************");
 
-         let amount: BigInt = ethers.parseEther("100000"); // token amount to check token Out amount
+         let amount: BigInt = ethers.parseEther("10000"); // token amount to check token Out amount
 
 
          const uniAmountout  =  await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, uniswapRouterContract);
@@ -129,7 +129,7 @@ async function main() {
         console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout, 18)} WETH`);
         console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout, 18)} WETH`);
        
-        const loanAmount = ethers.parseEther("10000000"); // Loan amount
+        const loanAmount = ethers.parseEther("10000"); // Loan amount
 
          const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout, loanAmount);
          if (hasOpportunity) {

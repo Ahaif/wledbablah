@@ -40,7 +40,7 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, amount: Big
             console.error("getAmountsOut function is not available on the provided contract.");
             return null; // Indicates the function or contract is not properly set.
         }
-
+        
         const amountsOut = await dexContract.getAmountsOut(amount, [tokenAAddress, tokenBAddress]);
         if (amountsOut && amountsOut[1] && BigInt(amountsOut[1].toString()) > 0) {
             return BigInt(amountsOut[1].toString()); // Convert the output to a bigint
@@ -104,41 +104,32 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, amount: Big
 export async function calculateArbitrageProfit(
     amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
-    loanAmount: bigint = 100n,
+    loanAmount: bigint,
     slippageTolerance: number = 10
 ): Promise<ArbitrageOpportunityI> {
     try {
-        
-        console.log("-------------------------------");
         console.log("Calculating optimized arbitrage profit...");
 
         const feeData = await provider.getFeeData();
-        const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || '0') * BigInt(110) / BigInt(100);
-        const estimatedGasLimit = BigInt(200000);
-        const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2);
+        const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
+        const estimatedGasLimit = BigInt(200000); // Example gas limit for swap transactions
+        const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2); // Two swaps
 
         const slippageFactor = BigInt(100 - slippageTolerance);
-        const feeFactor = BigInt(100 - 1);
-        const effectiveAmountOutUniswap = amountOutUniswap * slippageFactor / BigInt(100) * feeFactor / BigInt(100);
-        const effectiveAmountOutSushiswap = amountOutSushiswap * slippageFactor / BigInt(100) * feeFactor / BigInt(100);
+        const effectiveAmountOutUniswap = amountOutUniswap * slippageFactor / BigInt(100);
+        const effectiveAmountOutSushiswap = amountOutSushiswap * slippageFactor / BigInt(100);
 
-        const grossProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap;
-        const grossProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap;
-        const netProfitUniswap = grossProfitUniswap - totalGasCost;
-        const netProfitSushiswap = grossProfitSushiswap - totalGasCost;
+        const grossProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap - totalGasCost;
+        const grossProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap - totalGasCost;
 
-        console.log(`Gas cost (total for two swaps): ${ethers.formatEther(totalGasCost.toString())}`);
-        console.log(`Net Profit Uniswap: ${ethers.formatEther(netProfitUniswap.toString())}, Sushiswap: ${ethers.formatEther(netProfitSushiswap.toString())}`);
-        console.log("-------------------------------");
-
-        if (netProfitUniswap > 0n) {
-            console.log("Arbitrage opportunity found: Uniswap to Sushiswap");
+        if (grossProfitUniswap > 0n) {
+            console.log(`Arbitrage opportunity: UNISWAP_TO_SUSHISWAP with a net profit of: ${grossProfitUniswap}`);
             return { hasOpportunity: true, direction: 'UNISWAP_TO_SUSHISWAP', amountOutMin: effectiveAmountOutUniswap };
-        } else if (netProfitSushiswap > 0n) {
-            console.log("Arbitrage opportunity found: Sushiswap to Uniswap");
+        } else if (grossProfitSushiswap > 0n) {
+            console.log(`Arbitrage opportunity: SUSHISWAP_TO_UNISWAP with a net profit of: ${grossProfitSushiswap}`);
             return { hasOpportunity: true, direction: 'SUSHISWAP_TO_UNISWAP', amountOutMin: effectiveAmountOutSushiswap };
         } else {
-            console.log("No arbitrage opportunity found.");
+            console.log("No profitable arbitrage opportunity found.");
             return { hasOpportunity: false, direction: 'NONE', amountOutMin: 0n };
         }
     } catch (error) {
