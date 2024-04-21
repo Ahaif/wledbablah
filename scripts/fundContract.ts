@@ -6,8 +6,8 @@ dotenv.config();
 
 
 async function fundDAIHolderWithETH(daiHolderAddress: string, ethAmount: string) {
-    const provider = new ethers.JsonRpcProvider();
-    const privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Private key of the account with 100 ETH
+    const provider = new ethers.JsonRpcProvider(process.env.MAINNET_FORK_URL);
+    const privateKey = process.env.PRIVATE_KEY || ""; // Private key of the account with 100 ETH
     const signer = new ethers.Wallet(privateKey, provider);
 
     console.log(`Sending ${ethAmount} ETH to DAI holder for gas fees...`);
@@ -23,7 +23,7 @@ async function fundContractWithDAI(contractAddress: string, daiAmount: string) {
     const daiTokenAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F"; // DAI token address on Ethereum mainnet
     const daiHolderAddress = "0x837c20D568Dfcd35E74E5CC0B8030f9Cebe10A28"; // Address of a large DAI holder
     try{
-        await fundDAIHolderWithETH(daiHolderAddress, "15"); // Send 0.1 ETH to DAI holder for gas
+        await fundDAIHolderWithETH(daiHolderAddress, "0.1"); // Send 0.1 ETH to DAI holder for gas
 
     // Impersonate the DAI holder
         await network.provider.request({
