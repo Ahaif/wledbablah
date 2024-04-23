@@ -21,6 +21,6 @@ export const TOKENS = {
     DEXTF: `0x5F64Ab1544D28732F0A24F4713c2C8ec0dA089f0`
 };
 
-export const CONTRAT_ADDRESS  =`0xf93b0549cD50c849D792f0eAE94A598fA77C7718`
+export const CONTRAT_ADDRESS  =`0x90E75f390332356426B60FB440DF23f860F6A113`
 
 // export const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);

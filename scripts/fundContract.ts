@@ -21,9 +21,9 @@ async function fundDAIHolderWithETH(daiHolderAddress: string, ethAmount: string)
 
 async function fundContractWithDAI(contractAddress: string, daiAmount: string) {
     const daiTokenAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F"; // DAI token address on Ethereum mainnet
-    const daiHolderAddress = "0xC6B5B08B0E662699824eE7f39D7C4f78ed5732A5"; // Address of a large DAI holder
+    const daiHolderAddress = "0x837c20D568Dfcd35E74E5CC0B8030f9Cebe10A28"; // Address of a large DAI holder
     try{
-        await fundDAIHolderWithETH(daiHolderAddress, "0.1"); // Send 0.1 ETH to DAI holder for gas
+        await fundDAIHolderWithETH(daiHolderAddress, "5"); // Send 0.1 ETH to DAI holder for gas
 
     // Impersonate the DAI holder
         await network.provider.request({

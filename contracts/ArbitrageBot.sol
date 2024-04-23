@@ -41,19 +41,19 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
 
     
 
-    // function executeSwap(
-    //     address assetIn,
-    //     address assetOut,
-    //     uint256 amount,
-    //     uint256 amountOutMin,
-    //     address routerAddress
-    // ) internal returns (uint256[] memory) {
-    //     IERC20(assetIn).approve(routerAddress, amount);
-    //     address[] memory path = new address[](2);
-    //     path[0] = assetIn;
-    //     path[1] = assetOut;
-    //     return IUniswapRouter(routerAddress).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
-    // }
+    function executeSwap(
+        address assetIn,
+        address assetOut,
+        uint256 amount,
+        uint256 amountOutMin,
+        address routerAddress
+    ) internal returns (uint256[] memory) {
+        IERC20(assetIn).approve(routerAddress, amount);
+        address[] memory path = new address[](2);
+        path[0] = assetIn;
+        path[1] = assetOut;
+        return IUniswapRouter(routerAddress).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
+    }
 
     function executeOperation(
         address asset,
@@ -65,15 +65,15 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
         require(msg.sender == address(pool), "Caller must be pool");
         require(initiator == address(this), "Initiator must be this contract");
 
-        // (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
+        (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
 
-        // if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
-        //     executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
-        //     executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
-        // } else {
-        //     executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
-        //     executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
-        // }
+        if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
+            executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
+            executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
+        } else {
+            executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
+            executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
+        }
 
         finalizeOperation(asset, amount, premium);
         return true;
