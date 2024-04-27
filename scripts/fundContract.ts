@@ -1,12 +1,12 @@
 import { network, ethers } from "hardhat";
 // import { ethers } from "ethers";
 import * as dotenv from "dotenv";
-
+import {CONTRAT_ADDRESS, TOKENS} from '../src/constants';
 dotenv.config();
 
 
 async function fundDAIHolderWithETH(daiHolderAddress: string, ethAmount: string) {
-    const provider = new ethers.JsonRpcProvider(process.env.MAINNET_FORK_URL);
+    const provider = new ethers.JsonRpcProvider("http://localhost:8545");
     const privateKey = process.env.PRIVATE_KEY || ""; // Private key of the account with 100 ETH
     const signer = new ethers.Wallet(privateKey, provider);
 
@@ -20,10 +20,10 @@ async function fundDAIHolderWithETH(daiHolderAddress: string, ethAmount: string)
 }
 
 async function fundContractWithDAI(contractAddress: string, daiAmount: string) {
-    const daiTokenAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F"; // DAI token address on Ethereum mainnet
-    const daiHolderAddress = "0x837c20D568Dfcd35E74E5CC0B8030f9Cebe10A28"; // Address of a large DAI holder
+    const daiTokenAddress = TOKENS.DAI; // DAI token address on Ethereum mainnet
+    const daiHolderAddress = "0x6FF8E4DB500cBd77d1D181B8908E022E29e0Ec4A"; // Address of a large DAI holder
     try{
-        await fundDAIHolderWithETH(daiHolderAddress, "5"); // Send 0.1 ETH to DAI holder for gas
+        // await fundDAIHolderWithETH(daiHolderAddress, "5"); // Send 0.1 ETH to DAI holder for gas
 
     // Impersonate the DAI holder
         await network.provider.request({
@@ -59,8 +59,8 @@ async function fundContractWithDAI(contractAddress: string, daiAmount: string) {
 
 async function main() {
     try{
-        const contractAddress = "0xf93b0549cD50c849D792f0eAE94A598fA77C7718"; // Replace with your contract's address
-        await fundContractWithDAI(contractAddress, "50"); // Amount of DAI you want to transfer
+        const contractAddress = CONTRAT_ADDRESS; // Replace with your contract's address
+        await fundContractWithDAI(contractAddress, "500"); // Amount of DAI you want to transfer
     }
     catch(error : any)
     {

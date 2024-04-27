@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { ethers } from "ethers";
 import { calculateArbitrageProfit, fetchLiquidity } from './dexInteractions';
-import { DEX_IDENTIFIERS, TOKENS, CONTRAT_ADDRESS } from './constants';
+import { DEX_IDENTIFIERS, TOKENS, CONTRAT_ADDRESS, ERC20_ABI } from './constants';
 import testAbi from './contracts/ABIs/testAbi.json';
 import ArbitrageBotModuleABI from './contracts/ABIs/ArbitrageBotModuleABI.json';
 import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
@@ -32,10 +32,16 @@ if(!process.env.MAINNET_FORK_URL || !process.env.PRIVATE_KEY)
 // const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 
+async function getTokenDecimals(tokenAddress: string): Promise<number> {
+    const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+    return await tokenContract.decimals();
+}
+
+
 
 async function sendEthToContract() {
     const contractAddress = CONTRAT_ADDRESS;  // Your contract address
-    const sendAmount = ethers.parseEther("0.1");  // Amount of ETH to send
+    const sendAmount = ethers.parseEther("10");  // Amount of ETH to send
     const transaction = {
         to: contractAddress,            
         value: sendAmount,             
@@ -71,26 +77,29 @@ async function checkContractOwner() {
         console.log(`The owner of the contract is: ${ownerAddress}`);
         const greeting = await arbitrageBot.getGreeting();
         console.log(`Contract Greeting: ${greeting}`);
-        // const funds = await arbitrageBot.checkEtherBalance();
-        // console.log(`Contract funds: ${ethers.formatEther(funds.toString())} ETH`);
+        const funds = await arbitrageBot.checkEtherBalance();
+        console.log(`Contract funds: ${ethers.formatUnits(funds.toString(), 'ether')} ETH`)
     } catch (error) {
         throw new Error("Error checking contract owner and greeting and fund."); 
     }
 }
 
 
-async function initiateArbitrage(assetAddress: string, loanAmount: bigint, direction: string, amountOut: bigint) {
+async function initiateArbitrage(assetAddress: string, loanAmount: string, direction: string, amountOut: string) {
+    const decimals = await getTokenDecimals(assetAddress);
+    const adjustedLoanAmount = ethers.parseUnits(loanAmount, decimals);
+    const adjustedAmountOut = ethers.parseUnits(amountOut, decimals);
+
+    console.log(`Adjusted amount for ${decimals} decimals: ${adjustedLoanAmount.toString()}`);
     try {
-        console.log(`Initiating flash loan for asset: ${assetAddress} with amount: ${ethers.formatUnits(loanAmount, 6)} ETH`);
-        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, direction, TOKENS.USDT, TOKENS.USDC, amountOut);
+        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, BigInt(adjustedLoanAmount), direction, TOKENS.USDT, TOKENS.USDC, adjustedAmountOut);
         const receipt = await txResponse.wait();
-        // console.log('Transaction receipt:', receipt);
         console.log(`Transaction successful with hash: ${receipt.hash}`);
     } catch (error: any) {
         console.error(`Error initiating flash loan: ${error.message}`);
-        // console.error(`Full error: ${error}`);
     }
 }
+
 
 
 
@@ -107,15 +116,10 @@ async function main() {
          await logNetwork();
           await checkContractOwner();
         //   await sendEthToContract();
-        ethers.getAddress(TOKENS.USDT);
-        ethers.getAddress(TOKENS.USDC);
-        console.log(ethers.getAddress(TOKENS.USDT))
-        console.log(ethers.getAddress(TOKENS.USDC))
-    
         console.log("Starting Weldbablah");
         console.log("*********************************");
 
-         let amount = ethers.parseEther("500"); // token amount to check token Out amount
+        //  let amount = ethers.parseEther("500"); // token amount to check token Out amount
 
 
         //  const uniAmountout  =  await fetchLiquidity(TOKENS.USDT,TOKENS.USDC, amount, uniswapRouterContract);
@@ -134,19 +138,31 @@ async function main() {
         // console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout, 18)} WETH`);
         // console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout, 18)} WETH`);
        
-        const loanAmount = ethers.parseEther("200"); // Amount of USDT to borrow for arbitrage
+        const loanAmount = BigInt('200');
 
         //  const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout, loanAmount);
         //  if (hasOpportunity) {
            
             
-            const fundsb = await arbitrageBot.checkTokenBalance(TOKENS.USDT);
-           
-            console.log(`Contract funds BEFORE arbitrage: ${ethers.formatUnits(fundsb, 6)} USDT`);
+            let fundsb = await arbitrageBot.checkTokenBalance(TOKENS.USDT);
+            console.log(`Contract funds BEFORE arbitrage: ${fundsb} USDT`);
+            const fundc = await arbitrageBot.checkTokenBalance(TOKENS.USDC);
+            console.log(`Contract funds BEFORE arbitrage: ${fundc} USDC`);
+            const fundd = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
+            console.log(`Contract funds BEFORE arbitrage: ${fundd} DAI`);
+            const funde = await arbitrageBot.checkTokenBalance(TOKENS.WETH);
+            console.log(`Contract funds BEFORE arbitrage: ${funde} WETH`);
+            const fundf = await arbitrageBot.checkEtherBalance();
+            console.log(`Contract funds BEFORE arbitrage: ${fundf} ETH`);
+
             // await initiateArbitrage(TOKENS.DAI, loanAmount, direction, amountOutMin);
-            await initiateArbitrage(TOKENS.USDT, loanAmount, 'UNISWAP_TO_SUSHISWAP', 400n);
-             const fundsA = await arbitrageBot.checkTokenBalance(TOKENS.USDT);
-            console.log(`Contract funds AFTER  arbitrage: ${ethers.formatUnits(fundsA,6)} USDT`);
+            await initiateArbitrage(TOKENS.USDT, "200", 'UNISWAP_TO_SUSHISWAP', "400");
+            const fundG = await arbitrageBot.checkEtherBalance();
+            console.log(`Contract after arbitrage: ${fundG} ETH`);
+            fundsb = await arbitrageBot.checkTokenBalance(TOKENS.USDT);
+            console.log(`Contract funds AFTER  arbitrage: ${ethers.formatUnits(fundsb, 6)} USDT`);
+            //  const fundsA = await arbitrageBot.checkTokenBalance(TOKENS.USDT);
+            // console.log(`Contract funds AFTER  arbitrage: ${ethers.formatUnits(fundsA,6)} USDT`);
             
         // }
        //implement execute trade taking in consideration direction direction: 'UNISWAP_TO_SUSHISWAP' | 'SUSHISWAP_TO_UNISWAP'

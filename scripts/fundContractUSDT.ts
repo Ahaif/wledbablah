@@ -4,13 +4,15 @@ import { network, ethers } from "hardhat";
 // import { ethers } from "ethers";
 import * as dotenv from "dotenv";
 
+import {CONTRAT_ADDRESS, TOKENS} from '../src/constants';
+
 dotenv.config();
 
 // This script assumes you are using Hardhat and have the ethers.js library available.
 async function fundContractWithUSDT(contractAddress, usdtAmount) {
     // Replace with the actual USDT contract address and a real holder from a mainnet explorer
-    const usdtTokenAddress = '0xdAC17F958D2ee523a2206206994597C13D831ec7'; // USDT mainnet address
-    const usdtHolderAddress = "0xF4cffBC9Dd2262dd7FF0F51b4b3ECe92A7D46c7A"; // Address of a large USDT holder
+    const usdtTokenAddress = TOKENS.USDT; 
+    const usdtHolderAddress = `0xa7C0D36c4698981FAb42a7d8c783674c6Fe2592d`; // Address of a large USDT holder
 
     // Impersonate the USDT holder
     await network.provider.request({
@@ -33,15 +35,18 @@ async function fundContractWithUSDT(contractAddress, usdtAmount) {
         throw new Error("Not enough USDT balance in the impersonated account to perform the transfer.");
     }
 
+    const adjustUsdtAmount = ethers.parseUnits(usdtAmount, 6);
+
     // Execute the transfer
-    const transferTx = await USDT.transfer(contractAddress, ethers.parseUnits(usdtAmount, 6));
+    const transferTx = await USDT.transfer(contractAddress,adjustUsdtAmount);
     await transferTx.wait();
     console.log(`Transferred ${usdtAmount} USDT to the contract at address: ${contractAddress}`);
 }
 
 async function main() {
-    const contractAddress = "0x90E75f390332356426B60FB440DF23f860F6A113"; // Replace with your contract's address
-    const usdtAmount = "1000"; // Specify the amount of USDT to send
+    const contractAddress = CONTRAT_ADDRESS; // Replace with your contract's address
+    const usdtAmount = "10000"; // Specify the amount of USDT to send
+   
     await fundContractWithUSDT(contractAddress, usdtAmount);
 }
 

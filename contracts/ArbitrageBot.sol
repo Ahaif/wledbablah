@@ -8,6 +8,7 @@ import "../interfaces/IPoolAddressesProvider.sol";
 import "../interfaces/IUniswapRouter.sol";
 import "../interfaces/ISushiswapRouter.sol";
 import "../interfaces/IPool.sol";
+import "hardhat/console.sol";
 
 contract ArbitrageBot is ReentrancyGuard, Ownable {
     IPoolAddressesProvider public immutable addressesProvider;
@@ -65,28 +66,58 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
         require(msg.sender == address(pool), "Caller must be pool");
         require(initiator == address(this), "Initiator must be this contract");
 
-        (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
+        // (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
 
-        if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
-            executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
-            executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
-        } else {
-            executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
-            executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
-        }
+        // if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
+        //     executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
+        //     executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
+        // } else {
+        //     executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
+        //     executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
+        // }
 
         finalizeOperation(asset, amount, premium);
         return true;
     }
 
     function finalizeOperation(address asset, uint256 amount, uint256 premium) internal {
+
         uint256 amountOwing = amount + premium;
+        console.log("Amount owing: %d", amountOwing);
+        console.log("amount: %d", amount);
+        console.log("premium: %d", premium);
         require(IERC20(asset).balanceOf(address(this)) >= amountOwing, "Insufficient balance to repay loan");
         IERC20(asset).approve(address(pool), amountOwing);
+        console.log("Repaying loan done");
     }
+    
+   function initiateFlashLoan(
+    address asset, 
+    uint256 amount, 
+    string memory direction, 
+    address assetIn, 
+    address assetOut, 
+    uint256 amountOut
+) public onlyOwner {
+    IERC20 token = IERC20(asset);
+    uint256 balance = token.balanceOf(address(this));
+    require(balance >= amount, "Insufficient token balance for flash loan");
 
-    function initiateFlashLoan(address asset, uint256 amount, string memory direction, address assetIn, address assetOut, uint256 amountOut) public onlyOwner {
-        bytes memory params = abi.encode(direction, assetIn, assetOut, amountOut);
-        pool.flashLoanSimple(address(this), asset, amount, params, 0);
-    }
+    // Calculate a safe amount to approve, considering possible fees
+    uint256 safeApprovalAmount = amount * 2; // Double the amount to cover the loan and any potential fees
+
+    // Reset and set the allowance
+    token.approve(address(pool), 0); // Some tokens require resetting to 0 first
+    token.approve(address(pool), safeApprovalAmount);
+
+    console.log("Setting allowance for pool: %s", safeApprovalAmount);
+    console.log("Attempting flash loan with balance: %s", balance);
+
+    // Encode parameters and initiate the flash loan
+    bytes memory params = abi.encode(direction, assetIn, assetOut, amountOut);
+    pool.flashLoanSimple(address(this), asset, amount, params, 0);
+
+    // console.log("Loan initiated with params: %s", params);
+}
+
 }
