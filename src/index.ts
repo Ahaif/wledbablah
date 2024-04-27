@@ -115,7 +115,7 @@ async function main() {
        
          await logNetwork();
           await checkContractOwner();
-        //   await sendEthToContract();
+          await sendEthToContract();
         console.log("Starting Weldbablah");
         console.log("*********************************");
 

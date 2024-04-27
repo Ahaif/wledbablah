@@ -107,11 +107,11 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
     uint256 safeApprovalAmount = amount * 2; // Double the amount to cover the loan and any potential fees
 
     // Reset and set the allowance
-    token.approve(address(pool), 0); // Some tokens require resetting to 0 first
-    token.approve(address(pool), safeApprovalAmount);
+    // token.approve(address(pool), 0); // Some tokens require resetting to 0 first
+    // token.approve(address(pool), safeApprovalAmount);
 
-    console.log("Setting allowance for pool: %s", safeApprovalAmount);
-    console.log("Attempting flash loan with balance: %s", balance);
+    // console.log("Setting allowance for pool: %s", safeApprovalAmount);
+    // console.log("Attempting flash loan with balance: %s", balance);
 
     // Encode parameters and initiate the flash loan
     bytes memory params = abi.encode(direction, assetIn, assetOut, amountOut);
