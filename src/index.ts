@@ -137,8 +137,7 @@ async function main() {
 
         // console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout, 18)} WETH`);
         // console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout, 18)} WETH`);
-       
-        const loanAmount = BigInt('200');
+ 
 
         //  const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout, loanAmount);
         //  if (hasOpportunity) {
