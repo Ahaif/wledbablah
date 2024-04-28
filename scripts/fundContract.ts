@@ -18,6 +18,9 @@ dotenv.config();
 async function fundHolderWithETH(daiHolderAddress: string, ethAmount: string) {
     const provider = new ethers.JsonRpcProvider("http://localhost:8545");
     const privateKey = process.env.PRIVATE_KEY;
+    if (!privateKey) {
+        throw new Error("PRIVATE_KEY environment variable is not set.");
+    }
     const signer = new ethers.Wallet(privateKey, provider);
 
     console.log(`Sending ${ethAmount} ETH to account for gas fees...`);
@@ -64,8 +67,8 @@ async function fundContract(tokenAddress, tokenHolderAddress, amount, contractAd
 
 async function main() {
     const contractAddress = CONTRAT_ADDRESS;
-    const tokenAddress = TOKENS.WETH;
-    const tokenHolderAddress = WethHolderAddress;
+    const tokenAddress = TOKENS.DAI;
+    const tokenHolderAddress = DaiHolderAddress;
     const amount = "100";
     await fundContract(tokenAddress, tokenHolderAddress, amount, contractAddress);
 }

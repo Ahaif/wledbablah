@@ -85,14 +85,14 @@ async function checkContractOwner() {
 }
 
 
-async function initiateArbitrage(assetAddress: string, loanAmount: string, direction: string, amountOut: BigInt) {
+async function initiateArbitrage(assetAddress: string, loanAmount: string, direction: string, amountOut: string) {
     const decimals = await getTokenDecimals(assetAddress);
     const adjustedLoanAmount = ethers.parseUnits(loanAmount, decimals);
-    const adjustedAmountOut = ethers.parseUnits(amountOut.toString(), decimals);
+    const adjustedAmountOut = ethers.parseUnits(amountOut, decimals);
 
     console.log(`Adjusted amount for ${decimals} decimals: ${ethers.formatUnits(adjustedLoanAmount, decimals)}`);
     try {
-        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, BigInt(adjustedLoanAmount), direction, TOKENS.USDT, TOKENS.USDC, adjustedAmountOut);
+        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, adjustedLoanAmount, direction, TOKENS.USDT, TOKENS.USDC, adjustedAmountOut);
         const receipt = await txResponse.wait();
         console.log(`Transaction successful with hash: ${receipt.hash}`);
     } catch (error: any) {
@@ -117,20 +117,20 @@ async function main() {
        
          await logNetwork();
           await checkContractOwner();
-        //   await sendEthToContract();
+          await sendEthToContract();
         console.log("Starting Weldbablah");
         console.log("*********************************");
 
-       const  amount = "50"; // token amount to check token Out amount
+       const  amount = "10"; // token amount to check token Out amount
 
 
-         const uniAmountout  =  await fetchLiquidity(TOKENS.USDT,TOKENS.USDC, BigInt(amount), uniswapRouterContract);
+         const uniAmountout  =  await fetchLiquidity(TOKENS.WETH,TOKENS.DAI, BigInt(amount), uniswapRouterContract);
          if(uniAmountout === null)
          {
             console.log("Failed to fetch liquidity in uniswap.");
             return; // Exit or handle this scenario appropriately.
          }
-         const sushiAmountout = await fetchLiquidity( TOKENS.USDT,TOKENS.USDC,  BigInt(amount), SushiswapRouterContract);
+         const sushiAmountout = await fetchLiquidity( TOKENS.WETH,TOKENS.DAI,  BigInt(amount), SushiswapRouterContract);
          if(sushiAmountout === null)
          {
             console.log("Failed to fetch liquidity in sushiswap.");
@@ -156,7 +156,7 @@ async function main() {
             const fundf = await arbitrageBot.checkEtherBalance();
             console.log(`Contract funds BEFORE arbitrage: ${fundf} ETH`);
 
-            await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin);
+            await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin.toString());
             // await initiateArbitrage(TOKENS.USDT, "10", 'UNISWAP_TO_SUSHISWAP', "400");
             // const fundG = await arbitrageBot.checkEtherBalance();
             // console.log(`Contract after arbitrage: ${fundG} ETH`);

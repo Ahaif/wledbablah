@@ -33,15 +33,14 @@ const SushiswapRouterContract = new ethers.Contract(DEX_IDENTIFIERS.SUSHISWAP, S
 
 export async function fetchLiquidity(tokenA: string, tokenB: string, amount: BigInt, dexContract: ethers.Contract): Promise<bigint | null> {
     try {
-        const tokenAAddress = ethers.getAddress(tokenA);
-        const tokenBAddress = ethers.getAddress(tokenB);
+        
         // Check if the contract has the getAmountsOut function properly.
         if (!dexContract.getAmountsOut) {
             console.error("getAmountsOut function is not available on the provided contract.");
             return null; // Indicates the function or contract is not properly set.
         }
         
-        const amountsOut = await dexContract.getAmountsOut(amount, [tokenAAddress, tokenBAddress]);
+        const amountsOut = await dexContract.getAmountsOut(amount, [tokenA, tokenB]);
         if (amountsOut && amountsOut[1] && BigInt(amountsOut[1].toString()) > 0) {
             return BigInt(amountsOut[1].toString()); // Convert the output to a bigint
         } else {
