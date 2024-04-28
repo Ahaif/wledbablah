@@ -66,15 +66,15 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
         require(msg.sender == address(pool), "Caller must be pool");
         require(initiator == address(this), "Initiator must be this contract");
 
-        // (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
+        (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
 
-        // if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
-        //     executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
-        //     executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
-        // } else {
-        //     executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
-        //     executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
-        // }
+        if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
+            executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
+            executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
+        } else {
+            executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
+            executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
+        }
 
         finalizeOperation(asset, amount, premium);
         return true;
@@ -102,16 +102,6 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
     IERC20 token = IERC20(asset);
     uint256 balance = token.balanceOf(address(this));
     require(balance >= amount, "Insufficient token balance for flash loan");
-
-    // Calculate a safe amount to approve, considering possible fees
-    uint256 safeApprovalAmount = amount * 2; // Double the amount to cover the loan and any potential fees
-
-    // Reset and set the allowance
-    // token.approve(address(pool), 0); // Some tokens require resetting to 0 first
-    // token.approve(address(pool), safeApprovalAmount);
-
-    // console.log("Setting allowance for pool: %s", safeApprovalAmount);
-    // console.log("Attempting flash loan with balance: %s", balance);
 
     // Encode parameters and initiate the flash loan
     bytes memory params = abi.encode(direction, assetIn, assetOut, amountOut);

@@ -112,7 +112,7 @@ export async function calculateArbitrageProfit(
 
         const feeData = await provider.getFeeData();
         const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
-        const estimatedGasLimit = BigInt(200000); // Example gas limit for swap transactions
+        const estimatedGasLimit = BigInt(300000); // Example gas limit for swap transactions
         const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2); // Two swaps
 
         const slippageFactor = BigInt(100 - slippageTolerance);
