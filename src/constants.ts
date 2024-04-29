@@ -19,10 +19,19 @@ export const TOKENS = {
     USDT: `0xdAC17F958D2ee523a2206206994597C13D831ec7`,
     USDC: `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`,
     stETH:`0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84`,
+    MKR: `0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2`
 
 
 };
-
+//depolyed contract address
 export const CONTRAT_ADDRESS  =`0x8CeA85eC7f3D314c4d144e34F2206C8Ac0bbadA1`
+
+
+//DEX factory addresses
+export const UNISWAP_FACTORY_ADDRESS = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
+export const SUSHISWAP_FACTORY_ADDRESS = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac";
+export const FACTORY_ABI = [
+    "function getPair(address tokenA, address tokenB) external view returns (address pair)"
+];
 
 // export const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);

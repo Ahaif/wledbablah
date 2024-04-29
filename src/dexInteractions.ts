@@ -3,14 +3,14 @@ import { BigNumberish, } from "ethers";
 import {ethers, JsonRpcApiProvider } from 'ethers';
 import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
 import SushiswapRouterAbi from './contracts/ABIs/SushiswapAbi.json';
-import { DEX_IDENTIFIERS } from './constants';
+import { DEX_IDENTIFIERS, UNISWAP_FACTORY_ADDRESS,SUSHISWAP_FACTORY_ADDRESS,FACTORY_ABI } from './constants';
 import{ArbitrageOpportunityI} from './interfaces';
 import { formatEther, parseEther} from 'ethers/lib.commonjs/utils';
 
 
 dotenv.config();
 
-const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+const provider = new ethers.JsonRpcProvider(process.env.MAINNET_FORK_URL);
 const privateKey = process.env.PRIVATE_KEY;
 if (!privateKey || !provider) {
   throw new Error("PRIVATE_KEY or provider environment variable is not set.");
@@ -18,6 +18,7 @@ if (!privateKey || !provider) {
 // const wallet = new ethers.Wallet(privateKey, provider); 
 const uniswapRouterContract = new ethers.Contract(DEX_IDENTIFIERS.UNISWAP, UniswapRouterABI.result, provider);
 const SushiswapRouterContract = new ethers.Contract(DEX_IDENTIFIERS.SUSHISWAP, SushiswapRouterAbi.result, provider);
+console.log("Dex contracts initialized");
 
 
 // async function checkWalletBalanceForToken(walletAddress :string, tokenAddress: string, amountNeeded : BigNumber) {
@@ -30,6 +31,34 @@ const SushiswapRouterContract = new ethers.Contract(DEX_IDENTIFIERS.SUSHISWAP, S
 //     const balance = await provider.getBalance(walletAddress);
 //     return BigNumber.from(balance).gte(BigNumber.from(amountNeeded));
 // }
+
+async function checkPairExists(tokenA:string, tokenB:string, factoryAddress:string) {
+    const factoryContract = new ethers.Contract(factoryAddress, FACTORY_ABI, provider);
+    const pairAddress = await factoryContract.getPair(tokenA, tokenB);
+    return pairAddress !== '0x0000000000000000000000000000000000000000';
+}
+
+export async function ensurePairExists(tokenA : string, tokenB: string) {
+    try{
+        const existsOnUniswap = await checkPairExists(tokenA, tokenB, UNISWAP_FACTORY_ADDRESS);
+        const existsOnSushiswap = await checkPairExists(tokenA, tokenB, SUSHISWAP_FACTORY_ADDRESS);
+    
+        if (!existsOnUniswap || !existsOnSushiswap) {
+            
+            console.error(`Pair does not exist on both DEXes for tokens: ${tokenA} and ${tokenB}`);
+            throw new Error(`Pair does not exist on both DEXes for tokens: ${tokenA} and ${tokenB}`);
+        }
+    
+        console.log(`Pair exists on both Uniswap and Sushiswap for tokens: ${tokenA} and ${tokenB}`);
+        return true;
+
+    }catch(e:any){
+        console.error(`Error checking pair existence: ${e.message}`);
+        throw e.message;
+
+}
+}
+
 
 export async function fetchLiquidity(tokenA: string, tokenB: string, amount: BigInt, dexContract: ethers.Contract): Promise<bigint | null> {
     try {
@@ -47,8 +76,8 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, amount: Big
             console.error(`No liquidity available for token pair: ${tokenA} - ${tokenB}`);
             return null; // No liquidity found
         }
-    } catch (error) {
-        console.error(`Error fetching liquidity from dex: ${error}`);
+    } catch (error:any) {
+        console.error(`Error fetching liquidity from dex: ${error.message}`);
         return null; // Return null on failure
     }
 }
@@ -111,7 +140,7 @@ export async function calculateArbitrageProfit(
 
         const feeData = await provider.getFeeData();
         const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
-        const estimatedGasLimit = BigInt(300000); // Example gas limit for swap transactions
+        const estimatedGasLimit = BigInt(21000); // Example gas limit for swap transactions
         const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2); // Two swaps
 
         const slippageFactor = BigInt(100 - slippageTolerance);
