@@ -116,14 +116,19 @@ export async function calculateArbitrageProfit(
 
         const slippageFactor = BigInt(100 - slippageTolerance);
         const effectiveAmountOutUniswap = amountOutUniswap * slippageFactor / BigInt(100)- totalGasCost;
-        const effectiveAmountOutSushiswap = amountOutSushiswap * slippageFactor / BigInt(100)- totalGasCost;;
+        const effectiveAmountOutSushiswap= amountOutSushiswap * slippageFactor / BigInt(100)- totalGasCost;;
 
-        const grossProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap 
-        const grossProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap 
+        if(effectiveAmountOutUniswap < 0n && effectiveAmountOutSushiswap < 0n){
+            console.log("Both effective amounts are negative. Arbitrage is not profitable.");
+            throw new Error("Both effective amounts are negative. Arbitrage is not profitable.");
+        }
+
+        const grossProfitUniswap= effectiveAmountOutUniswap - effectiveAmountOutSushiswap 
+        const grossProfitSushiswap= effectiveAmountOutSushiswap - effectiveAmountOutUniswap 
 
 
-        console.log(`Effective amount out Uniswap: ${ethers.formatEther(effectiveAmountOutUniswap.toString())} `);
-        console.log(`Effective amount out Sushiswap: ${ethers.formatEther(effectiveAmountOutSushiswap.toString())}`);
+        console.log(`Effective amount out Uniswap: ${ethers.formatUnits(effectiveAmountOutUniswap, 'ether')} `);
+        console.log(`Effective amount out Sushiswap: ${ethers.formatUnits(effectiveAmountOutSushiswap, 'ether')} `);
 
 
 
@@ -137,8 +142,8 @@ export async function calculateArbitrageProfit(
             console.log("No profitable arbitrage opportunity found.");
             return { hasOpportunity: false, direction: 'NONE', amountOutMin: 0n };
         }
-    } catch (error) {
-        console.error("Error in calculating arbitrage profit", error);
+    } catch (error:any) {
+        console.error("Error in calculating arbitrage profit", error.message);
         return { hasOpportunity: false, direction: 'NONE', amountOutMin: 0n };
     }
 }
