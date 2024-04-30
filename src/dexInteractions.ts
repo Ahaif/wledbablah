@@ -32,6 +32,12 @@ console.log("Dex contracts initialized");
 //     return BigNumber.from(balance).gte(BigNumber.from(amountNeeded));
 // }
 
+
+async function getDecimals(tokenAddress: string): Promise<number> {
+    const tokenContract = new ethers.Contract(tokenAddress, ['function decimals() view returns (uint8)'], provider);
+    return await tokenContract.decimals();
+}
+
 async function checkPairExists(tokenA:string, tokenB:string, factoryAddress:string) {
     const factoryContract = new ethers.Contract(factoryAddress, FACTORY_ABI, provider);
     const pairAddress = await factoryContract.getPair(tokenA, tokenB);
@@ -60,18 +66,22 @@ export async function ensurePairExists(tokenA : string, tokenB: string) {
 }
 
 
-export async function fetchLiquidity(tokenA: string, tokenB: string, amount: BigInt, dexContract: ethers.Contract): Promise<bigint | null> {
+
+
+export async function fetchLiquidity(tokenA: string, tokenB: string, nominalAmount: string, dexContract: ethers.Contract): Promise<bigint | null> {
     try {
-        
-        // Check if the contract has the getAmountsOut function properly.
+        const decimalsA = await getDecimals(tokenA);
+        const amount = BigInt(nominalAmount) * BigInt(10) ** BigInt(decimalsA);
+
         if (!dexContract.getAmountsOut) {
             console.error("getAmountsOut function is not available on the provided contract.");
             return null; // Indicates the function or contract is not properly set.
         }
         
         const amountsOut = await dexContract.getAmountsOut(amount, [tokenA, tokenB]);
-        if (amountsOut && amountsOut[1] && BigInt(amountsOut[1].toString()) > 0) {
-            return BigInt(amountsOut[1].toString()); // Convert the output to a bigint
+        
+        if (amountsOut && amountsOut.length > 1 && amountsOut[1] > BigInt(0)) {
+            return BigInt(amountsOut[1]);
         } else {
             console.error(`No liquidity available for token pair: ${tokenA} - ${tokenB}`);
             return null; // No liquidity found
@@ -81,8 +91,6 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, amount: Big
         return null; // Return null on failure
     }
 }
-
-
 
 
 
@@ -133,7 +141,7 @@ export async function calculateArbitrageProfit(
     amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
     loanAmount: bigint,
-    slippageTolerance: number = 5
+    slippageTolerance: bigint = 5n
 ): Promise<ArbitrageOpportunityI> {
     try {
         console.log("Calculating optimized arbitrage profit...");
@@ -143,9 +151,9 @@ export async function calculateArbitrageProfit(
         const estimatedGasLimit = BigInt(21000); // Example gas limit for swap transactions
         const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2); // Two swaps
 
-        const slippageFactor = BigInt(100 - slippageTolerance);
-        const effectiveAmountOutUniswap = amountOutUniswap * slippageFactor / BigInt(100)- totalGasCost;
-        const effectiveAmountOutSushiswap= amountOutSushiswap * slippageFactor / BigInt(100)- totalGasCost;;
+        const slippageFactor: bigint = BigInt(100) - slippageTolerance;
+        const effectiveAmountOutUniswap = (amountOutUniswap * slippageFactor / BigInt(100))- totalGasCost;
+        const effectiveAmountOutSushiswap= (amountOutSushiswap * slippageFactor / BigInt(100))- totalGasCost;
 
         if(effectiveAmountOutUniswap < 0n && effectiveAmountOutSushiswap < 0n){
             console.log("Both effective amounts are negative. Arbitrage is not profitable.");

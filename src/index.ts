@@ -134,34 +134,34 @@ async function main() {
         //   await sendEthToContract();
         console.log("Starting Weldbablah");
         console.log("*********************************");
-        const res = await ensurePairExists(TOKENS.DAI, TOKENS.USDC);
-        if(res){
+        const res = await ensurePairExists(TOKENS.USDC, TOKENS.DAI);
+        if(!res){
             console.log("Pair exists");
             return
         }
 
-       const  amount = "10"; // token amount to check token Out amount
+       const  amount = "100000"; // token amount to check token Out amount
 
 
-         const uniAmountout  =  await fetchLiquidity(TOKENS.DAI,TOKENS.stETH, BigInt(amount),uniswapRouterContract);
+         const uniAmountout  =  await fetchLiquidity(TOKENS.USDC,TOKENS.DAI, amount,uniswapRouterContract);
          console.log(`uniAmountout in uniswap : ${uniAmountout}`);
          if(uniAmountout === null)
          {
             console.log("Failed to fetch liquidity in uniswap.");
             return; // Exit or handle this scenario appropriately.
          }
-         const sushiAmountout = await fetchLiquidity(TOKENS.DAI,TOKENS.stETH, BigInt(amount),SushiswapRouterContract);
+         const sushiAmountout = await fetchLiquidity(TOKENS.USDC,TOKENS.DAI, amount,SushiswapRouterContract);
          if(sushiAmountout === null)
          {
             console.log("Failed to fetch liquidity in sushiswap.");
             return // Exit or handle this scenario appropriately.
          }
 
-        console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout, 18)} WETH`);
-        console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout, 18)} WETH`);
+        console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout.toString(), 18)} DAI`);
+        console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout.toString(), 18)} DAI`);
  
 
-        //  const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout, BigInt(amount));
+         const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout, BigInt(amount));
         //  if (hasOpportunity) {
            
             
