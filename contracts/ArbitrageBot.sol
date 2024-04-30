@@ -99,10 +99,6 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
     address assetOut, 
     uint256 amountOut
 ) public onlyOwner {
-    IERC20 token = IERC20(asset);
-    uint256 balance = token.balanceOf(address(this));
-    require(balance >= amount, "Insufficient token balance for flash loan");
-
     // Encode parameters and initiate the flash loan
     bytes memory params = abi.encode(direction, assetIn, assetOut, amountOut);
     pool.flashLoanSimple(address(this), asset, amount, params, 0);

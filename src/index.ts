@@ -16,7 +16,7 @@ if(!process.env.MAINNET_FORK_URL || !process.env.PRIVATE_KEY)
 
 
 // connect to fork
-    const provider = new ethers.JsonRpcProvider(process.env.MAINNET_FORK_URL);
+    const provider = new ethers.JsonRpcProvider("http://localhost:8545");
     const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
         if (!provider || !signer) 
             throw new Error("Provider not set.");
@@ -96,13 +96,13 @@ async function initiateArbitrage(assetAddress: string, loanAmount: string, direc
     const adjustedLoanAmount = ethers.parseUnits(loanAmount, decimals);
     const adjustedAmountOut = ethers.parseUnits(amountOut, decimals);
 
-    console.log(`Initiating flash loan with details:
-    Asset: ${assetAddress}
-    Loan Amount: ${loanAmount} (${decimals} decimals)
-    Direction: ${direction}
-    Amount Out: ${amountOut}
-    adjustedLoanAmount: ${adjustedLoanAmount}
-    adjustedAmountOut: ${adjustedAmountOut}`);
+    // console.log(`Initiating flash loan with details:
+    // Asset: ${assetAddress}
+    // Loan Amount: ${loanAmount} (${decimals} decimals)
+    // Direction: ${direction}
+    // Amount Out: ${amountOut}
+    // adjustedLoanAmount: ${adjustedLoanAmount}
+    // adjustedAmountOut: ${adjustedAmountOut}`);
 
     console.log(`Adjusted amount for ${decimals} decimals: ${ethers.formatUnits(adjustedLoanAmount, decimals)}`);
     try {
@@ -130,7 +130,7 @@ async function main() {
     
        
          await logNetwork();
-        //   await checkContractOwner();
+          await checkContractOwner();
         //   await sendEthToContract();
         console.log("Starting Weldbablah");
         console.log("*********************************");
@@ -157,31 +157,31 @@ async function main() {
             return // Exit or handle this scenario appropriately.
          }
 
-        console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout.toString(), 18)} DAI`);
-        console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout.toString(), 18)} DAI`);
+        // console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout.toString(), 18)} DAI`);
+        // console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout.toString(), 18)} DAI`);
  
 
          const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout, BigInt(amount));
-        //  if (hasOpportunity) {
+         if (hasOpportunity) {
            
             
-        //     let fundsb = await arbitrageBot.checkTokenBalance(TOKENS.USDT);
-        //     console.log(`Contract funds BEFORE arbitrage: ${fundsb} USDT`);
-        //     const fundc = await arbitrageBot.checkTokenBalance(TOKENS.USDC);
-        //     console.log(`Contract funds BEFORE arbitrage: ${fundc} USDC`);
-        //     const fundd = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
-        //     console.log(`Contract funds BEFORE arbitrage: ${fundd} DAI`);
-        //     const funde = await arbitrageBot.checkTokenBalance(TOKENS.WETH);
-        //     console.log(`Contract funds BEFORE arbitrage: ${funde} WETH`);
-        //     const fundf = await arbitrageBot.checkEtherBalance();
-        //     console.log(`Contract funds BEFORE arbitrage: ${fundf} ETH`);
+            // let fundsb = await arbitrageBot.checkTokenBalance(TOKENS.USDT);
+            // console.log(`Contract funds BEFORE arbitrage: ${fundsb} USDT`);
+            const fundc = await arbitrageBot.checkTokenBalance(TOKENS.USDC);
+            console.log(`Contract funds BEFORE arbitrage: ${ethers.formatUnits(fundc, 6)} USDC`);
+            // const fundd = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
+            // console.log(`Contract funds BEFORE arbitrage: ${fundd} DAI`);
+            // const funde = await arbitrageBot.checkTokenBalance(TOKENS.WETH);
+            // console.log(`Contract funds BEFORE arbitrage: ${funde} WETH`);
+            const fundf = await arbitrageBot.checkEtherBalance();
+            console.log(`Contract funds BEFORE arbitrage: ${ethers.formatUnits(fundf, 18)} ETH`);
 
-        //     await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin.toString());
-        //     // await initiateArbitrage(TOKENS.USDT, "10", 'UNISWAP_TO_SUSHISWAP', "400");
-        //     const fundG = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
-        //     console.log(`Contract after arbitrage: ${fundG} DAI`);
+            await initiateArbitrage(TOKENS.USDC, amount, direction, amountOutMin.toString());
+            // await initiateArbitrage(TOKENS.USDT, "10", 'UNISWAP_TO_SUSHISWAP', "400");
+            const fundG = await arbitrageBot.checkTokenBalance(TOKENS.USDC);
+            console.log(`Contract After arbitrage: ${ethers.formatUnits(fundG, 6)} USDC`);
           
-        // }
+        }
        // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
 
     }catch(e: any){

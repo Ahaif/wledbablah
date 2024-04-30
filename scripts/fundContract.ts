@@ -67,9 +67,9 @@ async function fundContract(tokenAddress, tokenHolderAddress, amount, contractAd
 
 async function main() {
     const contractAddress = CONTRAT_ADDRESS;
-    const tokenAddress = TOKENS.WETH;
-    const tokenHolderAddress = WethHolderAddress;
-    const amount = "100";
+    const tokenAddress = TOKENS.USDC;
+    const tokenHolderAddress = UsdcHolderAddress;
+    const amount = "1000";
     await fundContract(tokenAddress, tokenHolderAddress, amount, contractAddress);
 }
 

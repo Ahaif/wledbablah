@@ -10,7 +10,7 @@ import { formatEther, parseEther} from 'ethers/lib.commonjs/utils';
 
 dotenv.config();
 
-const provider = new ethers.JsonRpcProvider(process.env.MAINNET_FORK_URL);
+const provider = new ethers.JsonRpcProvider("http://localhost:8545");
 const privateKey = process.env.PRIVATE_KEY;
 if (!privateKey || !provider) {
   throw new Error("PRIVATE_KEY or provider environment variable is not set.");
