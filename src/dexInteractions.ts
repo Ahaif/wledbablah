@@ -81,7 +81,7 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, nominalAmou
         const amountsOut = await dexContract.getAmountsOut(amount, [tokenA, tokenB]);
         
         if (amountsOut && amountsOut.length > 1 && amountsOut[1] > BigInt(0)) {
-            return BigInt(amountsOut[1]);
+            return amountsOut[1];
         } else {
             console.error(`No liquidity available for token pair: ${tokenA} - ${tokenB}`);
             return null; // No liquidity found
@@ -144,7 +144,10 @@ export async function calculateArbitrageProfit(
     slippageTolerance: bigint = 5n
 ): Promise<ArbitrageOpportunityI> {
     try {
+        console.log("****************************************");
         console.log("Calculating optimized arbitrage profit...");
+        console.log(`Amount out Uniswap: ${ethers.formatUnits(amountOutUniswap, 'ether')} `);
+        console.log(`Amount out Sushiswap: ${ethers.formatUnits(amountOutSushiswap, 'ether')} `);
 
         const feeData = await provider.getFeeData();
         const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
@@ -170,11 +173,11 @@ export async function calculateArbitrageProfit(
 
 
         if (grossProfitUniswap > 0n) {
-            console.log(`Arbitrage opportunity: SUSHISWAP_TO_UNISWAP with a net profit of: ${grossProfitUniswap}`);
-            return { hasOpportunity: true, direction: 'SUSHISWAP_TO_UNISWAP', amountOutMin: effectiveAmountOutUniswap };
+            console.log(`Arbitrage opportunity: UNISWAP_TO_SUSHISWAP with a net profit of: ${ethers.formatUnits(grossProfitUniswap, 18)}`);
+            return { hasOpportunity: true, direction: 'UNISWAP_TO_SUSHISWAP', amountOutMin: effectiveAmountOutUniswap };
         } else if (grossProfitSushiswap > 0n) {
-            console.log(`Arbitrage opportunity: UNISWAP_TO_SUSHISWAP with a net profit of: ${grossProfitSushiswap}`);
-            return { hasOpportunity: true, direction: 'UNISWAP_TO_SUSHISWAP', amountOutMin: effectiveAmountOutSushiswap };
+            console.log(`Arbitrage opportunity: SUSHISWAP_TO_UNISWAP with a net profit of: ${ethers.formatUnits(grossProfitSushiswap, 18)}`);
+            return { hasOpportunity: true, direction: 'SUSHISWAP_TO_UNISWAP', amountOutMin: effectiveAmountOutSushiswap };
         } else {
             console.log("No profitable arbitrage opportunity found.");
             return { hasOpportunity: false, direction: 'NONE', amountOutMin: 0n };

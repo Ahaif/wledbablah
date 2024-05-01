@@ -69,10 +69,18 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
         (string memory direction, address assetIn, address assetOut, uint256 amountOutMin) = abi.decode(params, (string, address, address, uint256));
 
         if (keccak256(bytes(direction)) == keccak256(bytes("UNISWAP_TO_SUSHISWAP"))) {
+            console.log("uniswap t sushiswap");
+            console.log("amount: %d", amount);
+            console.log("amountOutMin: %d", amountOutMin);
             executeSwap(assetIn, assetOut, amount, amountOutMin, UNISWAP_ROUTER);
+            console.log("swap done in UNISWAP ,next swap in SUSHISWAP");
             executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, SUSHISWAP_ROUTER);
         } else {
+            console.log("sushiswap to uniswap");
+            console.log("amount: %d", amount);
+            console.log("amountOutMin: %d", amountOutMin);
             executeSwap(assetIn, assetOut, amount, amountOutMin, SUSHISWAP_ROUTER);
+            console.log("swap done in sushiswap ,next swap in UNISWAP");
             executeSwap(assetOut, assetIn, IERC20(assetOut).balanceOf(address(this)), amountOutMin, UNISWAP_ROUTER);
         }
 

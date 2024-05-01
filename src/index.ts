@@ -93,8 +93,8 @@ async function initiateArbitrage(assetAddress: string, loanAmount: string, direc
  
 
     const decimals = await getTokenDecimals(assetAddress);
-    const adjustedLoanAmount = ethers.parseUnits(loanAmount, decimals);
-    const adjustedAmountOut = ethers.parseUnits(amountOut, decimals);
+    // const adjustedLoanAmount = ethers.parseUnits(loanAmount, decimals);
+    // const adjustedAmountOut = ethers.parseUnits(amountOut, 'ether');
 
     // console.log(`Initiating flash loan with details:
     // Asset: ${assetAddress}
@@ -104,9 +104,12 @@ async function initiateArbitrage(assetAddress: string, loanAmount: string, direc
     // adjustedLoanAmount: ${adjustedLoanAmount}
     // adjustedAmountOut: ${adjustedAmountOut}`);
 
-    console.log(`Adjusted amount for ${decimals} decimals: ${ethers.formatUnits(adjustedLoanAmount, decimals)}`);
+    // console.log(`Adjusted amount for ${decimals} decimals: ${ethers.formatUnits(adjustedLoanAmount, decimals)}`);
+
+    // console.log(`Adjusted amount for 18 decimals DAI: ${adjustedAmountOut}`);
+    
     try {
-        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, adjustedLoanAmount, direction, TOKENS.USDT, TOKENS.USDC, adjustedAmountOut);
+        const txResponse = await arbitrageBot.initiateFlashLoan(assetAddress, loanAmount, direction, TOKENS.USDC, TOKENS.DAI, amountOut);
         const receipt = await txResponse.wait();
         console.log(`Transaction successful with hash: ${receipt.hash}`);
     } catch (error: any) {
@@ -115,9 +118,7 @@ async function initiateArbitrage(assetAddress: string, loanAmount: string, direc
 }
 
 
-//dai
-//usdc
-//weth
+
 
 
 
@@ -131,7 +132,7 @@ async function main() {
        
          await logNetwork();
           await checkContractOwner();
-        //   await sendEthToContract();
+          await sendEthToContract();
         console.log("Starting Weldbablah");
         console.log("*********************************");
         const res = await ensurePairExists(TOKENS.USDC, TOKENS.DAI);
@@ -140,11 +141,10 @@ async function main() {
             return
         }
 
-       const  amount = "100000"; // token amount to check token Out amount
+       const  amount = "10000"; // token amount to check token Out amount
 
 
          const uniAmountout  =  await fetchLiquidity(TOKENS.USDC,TOKENS.DAI, amount,uniswapRouterContract);
-         console.log(`uniAmountout in uniswap : ${uniAmountout}`);
          if(uniAmountout === null)
          {
             console.log("Failed to fetch liquidity in uniswap.");
@@ -157,8 +157,8 @@ async function main() {
             return // Exit or handle this scenario appropriately.
          }
 
-        // console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout.toString(), 18)} DAI`);
-        // console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout.toString(), 18)} DAI`);
+        console.log(`initial ammountOut Uniswap: ${ethers.formatUnits(uniAmountout.toString(), 18)} DAI`);
+        console.log(`initial ammounOut Sushiswap: ${ethers.formatUnits(sushiAmountout.toString(), 18)} DAI`);
  
 
          const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout, BigInt(amount));
@@ -176,8 +176,16 @@ async function main() {
             const fundf = await arbitrageBot.checkEtherBalance();
             console.log(`Contract funds BEFORE arbitrage: ${ethers.formatUnits(fundf, 18)} ETH`);
 
+
+
+
+
             await initiateArbitrage(TOKENS.USDC, amount, direction, amountOutMin.toString());
             // await initiateArbitrage(TOKENS.USDT, "10", 'UNISWAP_TO_SUSHISWAP', "400");
+
+
+
+
             const fundG = await arbitrageBot.checkTokenBalance(TOKENS.USDC);
             console.log(`Contract After arbitrage: ${ethers.formatUnits(fundG, 6)} USDC`);
           
