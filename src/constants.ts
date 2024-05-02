@@ -24,7 +24,7 @@ export const TOKENS = {
 
 };
 //depolyed contract address
-export const CONTRAT_ADDRESS  =`0x29023DE63D7075B4cC2CE30B55f050f9c67548d4`
+export const CONTRAT_ADDRESS  =`0x59c7D03d2E9893FB7bAa89dA50a9452e1e9B8b90`
 
 
 //DEX factory addresses
@@ -32,6 +32,10 @@ export const UNISWAP_FACTORY_ADDRESS = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA
 export const SUSHISWAP_FACTORY_ADDRESS = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac";
 export const FACTORY_ABI = [
     "function getPair(address tokenA, address tokenB) external view returns (address pair)"
+];
+export const PAIR_ABI = [
+    // The getReserves function returns two reserve amounts and a block timestamp
+    "function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)"
 ];
 
 // export const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);

@@ -3,7 +3,12 @@ import { BigNumberish, } from "ethers";
 import {ethers, JsonRpcApiProvider } from 'ethers';
 import UniswapRouterABI from './contracts/ABIs/UniswapRouter.json';
 import SushiswapRouterAbi from './contracts/ABIs/SushiswapAbi.json';
-import { DEX_IDENTIFIERS, UNISWAP_FACTORY_ADDRESS,SUSHISWAP_FACTORY_ADDRESS,FACTORY_ABI } from './constants';
+import { DEX_IDENTIFIERS,
+    UNISWAP_FACTORY_ADDRESS,
+    SUSHISWAP_FACTORY_ADDRESS,
+    FACTORY_ABI,
+    PAIR_ABI,
+} from './constants';
 import{ArbitrageOpportunityI} from './interfaces';
 import { formatEther, parseEther} from 'ethers/lib.commonjs/utils';
 
@@ -70,13 +75,33 @@ export async function ensurePairExists(tokenA : string, tokenB: string) {
 
 export async function fetchLiquidity(tokenA: string, tokenB: string, nominalAmount: string, dexContract: ethers.Contract): Promise<bigint | null> {
     try {
+        const factoryContract = new ethers.Contract(UNISWAP_FACTORY_ADDRESS, FACTORY_ABI, provider);
         const decimalsA = await getDecimals(tokenA);
         const amount = BigInt(nominalAmount) * BigInt(10) ** BigInt(decimalsA);
+
+
+        const pairAddress = await factoryContract.getPair(tokenA, tokenB);
 
         if (!dexContract.getAmountsOut) {
             console.error("getAmountsOut function is not available on the provided contract.");
             return null; // Indicates the function or contract is not properly set.
         }
+
+        const pairContract = new ethers.Contract(pairAddress, PAIR_ABI, provider);
+        const reserves = await pairContract.getReserves();
+        const reserves0 = BigInt(reserves.reserve0.toString());
+        const reserves1 = BigInt(reserves.reserve1.toString());
+        
+        
+        // Determine the correct order of reserves
+        const [tokenAReserve, tokenBReserve] = tokenA < tokenB ? [reserves0, reserves1] : [reserves1, reserves0];
+
+        // Check if reserves are sufficient
+        if (tokenAReserve < amount || tokenBReserve < amount) {
+            console.error("Insufficient liquidity for this trade.");
+            return null;
+        }
+
         
         const amountsOut = await dexContract.getAmountsOut(amount, [tokenA, tokenB]);
         
