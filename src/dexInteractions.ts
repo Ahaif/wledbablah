@@ -73,51 +73,64 @@ export async function ensurePairExists(tokenA : string, tokenB: string) {
 
 
 
-export async function fetchLiquidity(tokenA: string, tokenB: string, nominalAmount: string, dexContract: ethers.Contract): Promise<bigint | null> {
+export async function fetchLiquidity(tokenA: string, tokenB: string, nominalAmount: string, dexContract: ethers.Contract, dex :string): Promise<bigint | null> {
     try {
-        const factoryContract = new ethers.Contract(UNISWAP_FACTORY_ADDRESS, FACTORY_ABI, provider);
+     
         const decimalsA = await getDecimals(tokenA);
         const amount = BigInt(nominalAmount) * BigInt(10) ** BigInt(decimalsA);
-
-
-        const pairAddress = await factoryContract.getPair(tokenA, tokenB);
+        let factoryContract;
+        let pairAddress;
+        let pairContract;
+        let reserves;
+        let reserves0;
+        let reserves1;
 
         if (!dexContract.getAmountsOut) {
             console.error("getAmountsOut function is not available on the provided contract.");
-            return null; // Indicates the function or contract is not properly set.
+            return null; 
         }
 
-        const pairContract = new ethers.Contract(pairAddress, PAIR_ABI, provider);
-        const reserves = await pairContract.getReserves();
-        const reserves0 = BigInt(reserves.reserve0);
-        const reserves1 = BigInt(reserves.reserve1);
-        console.log('reserve0',ethers.formatUnits(reserves0, 'ether'));
-        console.log('reserve1',ethers.formatUnits(reserves1, 'ether'));
 
-
-        
-        
+        if(dex === 'uniswap'){
+            factoryContract = new ethers.Contract(UNISWAP_FACTORY_ADDRESS, FACTORY_ABI, provider);
+            pairAddress = await factoryContract.getPair(tokenA, tokenB);
+             pairContract = new ethers.Contract(pairAddress, PAIR_ABI, provider);
+             reserves = await pairContract.getReserves();
+             reserves0 = BigInt(reserves.reserve0);
+             reserves1 = BigInt(reserves.reserve1);
+            console.log("------------------------UNISWAP RESERVE------------------------")
+            console.log('reserve0 of tokenA',ethers.formatUnits(reserves0, 'ether'));
+            console.log('reserve1 of TokenB',ethers.formatUnits(reserves1, 'ether'));
+        }else
+        {
+            factoryContract = new ethers.Contract(SUSHISWAP_FACTORY_ADDRESS, FACTORY_ABI, provider);
+             pairAddress = await factoryContract.getPair(tokenA, tokenB);
+             pairContract = new ethers.Contract(pairAddress, PAIR_ABI, provider);
+             reserves = await pairContract.getReserves();
+            reserves0 = BigInt(reserves.reserve0);
+             reserves1 = BigInt(reserves.reserve1);
+            console.log("------------------------SUSHISWAP RESERVE------------------------")
+            console.log('reserve0 of tokenA',ethers.formatUnits(reserves0, 'ether'));
+            console.log('reserve1 of TokenB',ethers.formatUnits(reserves1, 'ether'));
+  
+        }
         // Determine the correct order of reserves
         const [tokenAReserve, tokenBReserve] = tokenA < tokenB ? [reserves0, reserves1] : [reserves1, reserves0];
-
         // Check if reserves are sufficient
         if (tokenAReserve < amount || tokenBReserve < amount) {
             console.error("Insufficient liquidity for this trade.");
             return null;
         }
-
-        
         const amountsOut = await dexContract.getAmountsOut(amount, [tokenA, tokenB]);
-        
         if (amountsOut && amountsOut.length > 1 && amountsOut[1] > BigInt(0)) {
             return amountsOut[1];
         } else {
             console.error(`No liquidity available for token pair: ${tokenA} - ${tokenB}`);
-            return null; // No liquidity found
+            return null; 
         }
     } catch (error:any) {
         console.error(`Error fetching liquidity from dex: ${error.message}`);
-        return null; // Return null on failure
+        return null; 
     }
 }
 
@@ -170,17 +183,17 @@ export async function calculateArbitrageProfit(
     amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
     loanAmount: bigint,
-    slippageTolerance: bigint = 30n
+    slippageTolerance: bigint = 2n
 ): Promise<ArbitrageOpportunityI> {
     try {
         console.log("****************************************");
-        console.log("Calculating optimized arbitrage profit...");
+        console.log("Calculating Arbitrage Opportunity Profit");
         console.log(`Amount out Uniswap: ${ethers.formatUnits(amountOutUniswap, 'ether')} `);
         console.log(`Amount out Sushiswap: ${ethers.formatUnits(amountOutSushiswap, 'ether')} `);
 
         const feeData = await provider.getFeeData();
         const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
-        const estimatedGasLimit = BigInt(30000); // Example gas limit for swap transactions
+        const estimatedGasLimit = BigInt(21000); // Example gas limit for swap transactions
         const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2); // Two swaps
 
         const slippageFactor: bigint = BigInt(100) - slippageTolerance;
@@ -202,9 +215,11 @@ export async function calculateArbitrageProfit(
 
 
         if (grossProfitUniswap > 0n) {
+            console.log('Gross profit Uniswap:',ethers.formatUnits(grossProfitUniswap, 'ether'));
             console.log(`Arbitrage opportunity: UNISWAP_TO_SUSHISWAP with a net profit of: ${ethers.formatUnits(grossProfitUniswap, 18)}`);
             return { hasOpportunity: true, direction: 'UNISWAP_TO_SUSHISWAP', amountOutMin: effectiveAmountOutUniswap };
         } else if (grossProfitSushiswap > 0n) {
+            console.log('Gross profit Sushiswap:',ethers.formatUnits(grossProfitSushiswap, 'ether'));
             console.log(`Arbitrage opportunity: SUSHISWAP_TO_UNISWAP with a net profit of: ${ethers.formatUnits(grossProfitSushiswap, 18)}`);
             return { hasOpportunity: true, direction: 'SUSHISWAP_TO_UNISWAP', amountOutMin: effectiveAmountOutSushiswap };
         } else {
