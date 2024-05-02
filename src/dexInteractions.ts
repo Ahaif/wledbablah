@@ -89,8 +89,12 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, nominalAmou
 
         const pairContract = new ethers.Contract(pairAddress, PAIR_ABI, provider);
         const reserves = await pairContract.getReserves();
-        const reserves0 = BigInt(reserves.reserve0.toString());
-        const reserves1 = BigInt(reserves.reserve1.toString());
+        const reserves0 = BigInt(reserves.reserve0);
+        const reserves1 = BigInt(reserves.reserve1);
+        console.log('reserve0',ethers.formatUnits(reserves0, 'ether'));
+        console.log('reserve1',ethers.formatUnits(reserves1, 'ether'));
+
+
         
         
         // Determine the correct order of reserves
@@ -166,7 +170,7 @@ export async function calculateArbitrageProfit(
     amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
     loanAmount: bigint,
-    slippageTolerance: bigint = 5n
+    slippageTolerance: bigint = 30n
 ): Promise<ArbitrageOpportunityI> {
     try {
         console.log("****************************************");
@@ -176,7 +180,7 @@ export async function calculateArbitrageProfit(
 
         const feeData = await provider.getFeeData();
         const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
-        const estimatedGasLimit = BigInt(21000); // Example gas limit for swap transactions
+        const estimatedGasLimit = BigInt(30000); // Example gas limit for swap transactions
         const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2); // Two swaps
 
         const slippageFactor: bigint = BigInt(100) - slippageTolerance;
