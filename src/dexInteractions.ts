@@ -186,7 +186,7 @@ export async function calculateArbitrageProfit(
     amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
     loanAmount: bigint,
-    slippageTolerance: bigint = 2n
+    slippageTolerance: bigint = 5n
 ): Promise<ArbitrageOpportunityI> {
     try {
         console.log("****************************************");
@@ -204,7 +204,7 @@ export async function calculateArbitrageProfit(
         // Gas and slippage calculations
         const feeData = await provider.getFeeData();
         const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
-        const estimatedGasLimit = BigInt(210000); // Adjusted gas limit for complex transactions
+        const estimatedGasLimit = BigInt(400000); // Adjusted gas limit for complex transactions
         const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2); // Two swaps
 
         const slippageFactor: bigint = BigInt(100) - slippageTolerance;

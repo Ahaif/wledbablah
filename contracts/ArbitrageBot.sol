@@ -53,7 +53,10 @@ contract ArbitrageBot is ReentrancyGuard, Ownable {
         address[] memory path = new address[](2);
         path[0] = assetIn;
         path[1] = assetOut;
-        return IUniswapRouter(routerAddress).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
+        uint256[] memory res = IUniswapRouter(routerAddress).swapExactTokensForTokens(amount, amountOutMin, path, address(this), block.timestamp);
+        console.log("Swap done tokenAmountOut of token A", res[0]);
+        console.log("Swap done tokenAmountOut of token B", res[1]);
+        return res;
     }
 
     function executeOperation(
