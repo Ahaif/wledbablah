@@ -24,7 +24,7 @@ export const TOKENS = {
 
 };
 //depolyed contract address
-export const CONTRAT_ADDRESS  =`0x59c7D03d2E9893FB7bAa89dA50a9452e1e9B8b90`
+export const CONTRAT_ADDRESS  =`0x834Ea01e45F9b5365314358159d92d134d89feEb`
 
 
 //DEX factory addresses

@@ -179,6 +179,9 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, nominalAmou
 //   }
 
 // }
+
+
+
 export async function calculateArbitrageProfit(
     amountOutUniswap: bigint,
     amountOutSushiswap: bigint,
@@ -188,45 +191,43 @@ export async function calculateArbitrageProfit(
     try {
         console.log("****************************************");
         console.log("Calculating Arbitrage Opportunity Profit");
-        console.log(`Amount out Uniswap: ${ethers.formatUnits(amountOutUniswap, 'ether')} `);
-        console.log(`Amount out Sushiswap: ${ethers.formatUnits(amountOutSushiswap, 'ether')} `);
 
+        // Constants
+        const flashLoanFeeRate: bigint = 9n; // 0.09% expressed as 0.09 * 100 to avoid floating point operations
+        const basisPoint: bigint = 10000n; // Basis points conversion factor
+
+        // Calculate the flash loan fee
+        const flashLoanFee: bigint = loanAmount * flashLoanFeeRate / basisPoint;
+
+        console.log(`Flash loan fee: ${ethers.formatUnits(flashLoanFee, 'ether')} ETH`);
+
+        // Gas and slippage calculations
         const feeData = await provider.getFeeData();
         const adjustedGasPrice = BigInt(feeData.maxFeePerGas?.toString() || feeData.gasPrice?.toString() || '0') * BigInt(110) / BigInt(100);
-        const estimatedGasLimit = BigInt(21000); // Example gas limit for swap transactions
+        const estimatedGasLimit = BigInt(210000); // Adjusted gas limit for complex transactions
         const totalGasCost = adjustedGasPrice * estimatedGasLimit * BigInt(2); // Two swaps
 
         const slippageFactor: bigint = BigInt(100) - slippageTolerance;
-        const effectiveAmountOutUniswap = (amountOutUniswap * slippageFactor / BigInt(100))- totalGasCost;
-        const effectiveAmountOutSushiswap= (amountOutSushiswap * slippageFactor / BigInt(100))- totalGasCost;
-
-        if(effectiveAmountOutUniswap < 0n && effectiveAmountOutSushiswap < 0n){
-            console.log("Both effective amounts are negative. Arbitrage is not profitable.");
-            throw new Error("Both effective amounts are negative. Arbitrage is not profitable.");
-        }
-
-        const grossProfitUniswap= effectiveAmountOutUniswap - effectiveAmountOutSushiswap 
-        const grossProfitSushiswap= effectiveAmountOutSushiswap - effectiveAmountOutUniswap 
-
+        const effectiveAmountOutUniswap = (amountOutUniswap * slippageFactor / BigInt(100)) - totalGasCost - flashLoanFee;
+        const effectiveAmountOutSushiswap = (amountOutSushiswap * slippageFactor / BigInt(100)) - totalGasCost - flashLoanFee;
 
         console.log(`Effective amount out Uniswap: ${ethers.formatUnits(effectiveAmountOutUniswap, 'ether')} `);
         console.log(`Effective amount out Sushiswap: ${ethers.formatUnits(effectiveAmountOutSushiswap, 'ether')} `);
 
-
+        const grossProfitUniswap = effectiveAmountOutUniswap - effectiveAmountOutSushiswap;
+        const grossProfitSushiswap = effectiveAmountOutSushiswap - effectiveAmountOutUniswap;
 
         if (grossProfitUniswap > 0n) {
-            console.log('Gross profit Uniswap:',ethers.formatUnits(grossProfitUniswap, 'ether'));
-            console.log(`Arbitrage opportunity: UNISWAP_TO_SUSHISWAP with a net profit of: ${ethers.formatUnits(grossProfitUniswap, 18)}`);
+            console.log('Gross profit Uniswap:', ethers.formatUnits(grossProfitUniswap, 'ether'));
             return { hasOpportunity: true, direction: 'UNISWAP_TO_SUSHISWAP', amountOutMin: effectiveAmountOutUniswap };
         } else if (grossProfitSushiswap > 0n) {
-            console.log('Gross profit Sushiswap:',ethers.formatUnits(grossProfitSushiswap, 'ether'));
-            console.log(`Arbitrage opportunity: SUSHISWAP_TO_UNISWAP with a net profit of: ${ethers.formatUnits(grossProfitSushiswap, 18)}`);
+            console.log('Gross profit Sushiswap:', ethers.formatUnits(grossProfitSushiswap, 'ether'));
             return { hasOpportunity: true, direction: 'SUSHISWAP_TO_UNISWAP', amountOutMin: effectiveAmountOutSushiswap };
         } else {
             console.log("No profitable arbitrage opportunity found.");
             return { hasOpportunity: false, direction: 'NONE', amountOutMin: 0n };
         }
-    } catch (error:any) {
+    } catch (error: any) {
         console.error("Error in calculating arbitrage profit", error.message);
         return { hasOpportunity: false, direction: 'NONE', amountOutMin: 0n };
     }

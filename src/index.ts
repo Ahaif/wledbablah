@@ -162,7 +162,7 @@ async function main() {
          if (hasOpportunity) {
            
             const fundf = await arbitrageBot.checkEtherBalance();
-            console.log(`Contract funds BEFORE arbitrage: ${ethers.formatUnits(fundf, 18)} ETH`);
+            console.log(`Contract funds BEFORE arbitrage: ${ethers.formatUnits(fundf, 18)} WETH`);
             const fundd = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
             console.log(`Contract funds BEFORE arbitrage: ${ethers.formatUnits(fundd, 18)} DAI`);
 
@@ -170,10 +170,16 @@ async function main() {
             await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin);
 ;
             const funddd= await arbitrageBot.checkTokenBalance(TOKENS.DAI);
-            console.log(`Contract After arbitrage: ${ethers.formatUnits(fundd, 18)} DAI`);
+            console.log(`Contract After arbitrage: ${ethers.formatUnits(funddd, 18)} DAI`);
+        
+
             if (funddd > fundd)
             {
                 console.log("Arbitrage profitable ");
+            }
+            else if (funddd === fundd)
+            {
+                console.log("Arbitrage neutral");
             }
             else
             {
