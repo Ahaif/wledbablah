@@ -122,78 +122,62 @@ async function initiateArbitrage(assetAddress: string, loanAmount: string, direc
 
 
 
-
 async function main() {
-
-    try{
-        // setupBlocknative(); listening to mempool
-        // await setupProviderAndSigner(); metamask set up
-
-    
-       
-         await logNetwork();
-          await checkContractOwner();
-          await sendEthToContract();
+    try {
+        await logNetwork();
+        await checkContractOwner();
+        // await sendEthToContract();
         console.log("Starting Weldbablah");
         console.log("*********************************");
+
         const res = await ensurePairExists(TOKENS.DAI, TOKENS.WETH);
-        if(!res){
-            console.log("Pair exists");
-            return
+        if (!res) {
+            console.log("Pair does not exist on both DEXes.");
+            return;
         }
 
-       const  amount = "1000"; // token amount to check token Out amount
+        const amount = "10"; // token amount to check token Out amount
 
+        // Fetch amountOut for DAI -> WETH on Uniswap
+        const uniAmountOut = await fetchLiquidity(TOKENS.DAI, TOKENS.WETH, amount, uniswapRouterContract, "uniswap");
+        if (uniAmountOut === null) {
+            console.log("Failed to fetch liquidity on Uniswap.");
+            return;
+        }
 
-         const uniAmountout  =  await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount, uniswapRouterContract, "uniswap");
-         if(uniAmountout === null)
-         {
-            console.log("Failed to fetch liquidity in uniswap.");
-            return; // Exit or handle this scenario appropriately.
-         }
-         const sushiAmountout = await fetchLiquidity(TOKENS.DAI,TOKENS.WETH, amount,SushiswapRouterContract, "sushiswap");
-         if(sushiAmountout === null)
-         {
-            console.log("Failed to fetch liquidity in sushiswap.");
-            return // Exit or handle this scenario appropriately.
-         }
+        // Fetch amountOut for WETH -> DAI on Sushiswap
+        const sushiAmountOut = await fetchLiquidity(TOKENS.WETH, TOKENS.DAI, uniAmountOut.toString(), SushiswapRouterContract, "sushiswap");
+        if (sushiAmountOut === null) {
+            console.log("Failed to fetch liquidity on Sushiswap.");
+            return;
+        }
 
-         const { hasOpportunity, direction,  amountOutMin} = await calculateArbitrageProfit(uniAmountout, sushiAmountout, BigInt(amount));
-         if (hasOpportunity) {
-           
+        const { hasOpportunity, direction, amountOutMin } = await calculateArbitrageProfit(uniAmountOut, sushiAmountOut, BigInt(amount));
+        if (hasOpportunity) {
             const fundf = await arbitrageBot.checkEtherBalance();
             console.log(`Contract funds BEFORE arbitrage: ${ethers.formatUnits(fundf, 18)} WETH`);
             const fundd = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
             console.log(`Contract funds BEFORE arbitrage: ${ethers.formatUnits(fundd, 18)} DAI`);
 
-
             await initiateArbitrage(TOKENS.DAI, amount, direction, amountOutMin);
-;
-            const funddd= await arbitrageBot.checkTokenBalance(TOKENS.DAI);
-            console.log(`Contract After arbitrage: ${ethers.formatUnits(funddd, 18)} DAI`);
-        
 
-            if (funddd > fundd)
-            {
-                console.log("Arbitrage profitable ");
-            }
-            else if (funddd === fundd)
-            {
+            const funddd = await arbitrageBot.checkTokenBalance(TOKENS.DAI);
+            console.log(`Contract funds AFTER arbitrage: ${ethers.formatUnits(funddd, 18)} DAI`);
+
+            if (funddd > fundd) {
+                console.log("Arbitrage profitable");
+            } else if (funddd === fundd) {
                 console.log("Arbitrage neutral");
-            }
-            else
-            {
+            } else {
                 console.log("Arbitrage failed");
             }
-          
+        } else {
+            console.log("No profitable arbitrage opportunity found.");
         }
-       // await sendFlashbotsTransaction(assetAddress, "1", "UNISWAP_TO_SUHISWAP");  // This now sends using Flashbots
-
-    }catch(e: any){
-        console.log(e.message);
+    } catch (e: any) {
+        console.error(e.message);
         console.log("Error in main");
     }
-    
 }
 
 main().catch(console.error);

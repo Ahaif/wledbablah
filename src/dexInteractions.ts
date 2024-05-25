@@ -43,41 +43,43 @@ async function getDecimals(tokenAddress: string): Promise<number> {
     return await tokenContract.decimals();
 }
 
-async function checkPairExists(tokenA:string, tokenB:string, factoryAddress:string) {
+async function checkPairExists(tokenA: string, tokenB: string, factoryAddress: string): Promise<boolean> {
     const factoryContract = new ethers.Contract(factoryAddress, FACTORY_ABI, provider);
-    const pairAddress = await factoryContract.getPair(tokenA, tokenB);
-    return pairAddress !== '0x0000000000000000000000000000000000000000';
+    const [token0, token1] = tokenA.toLowerCase() < tokenB.toLowerCase() ? [tokenA, tokenB] : [tokenB, tokenA];
+    const pairAddress = await factoryContract.getPair(token0, token1);
+    return pairAddress !== "0x";
 }
 
-export async function ensurePairExists(tokenA : string, tokenB: string) {
-    try{
+export async function ensurePairExists(tokenA: string, tokenB: string): Promise<boolean> {
+    try {
         const existsOnUniswap = await checkPairExists(tokenA, tokenB, UNISWAP_FACTORY_ADDRESS);
         const existsOnSushiswap = await checkPairExists(tokenA, tokenB, SUSHISWAP_FACTORY_ADDRESS);
-    
+
         if (!existsOnUniswap || !existsOnSushiswap) {
-            
             console.error(`Pair does not exist on both DEXes for tokens: ${tokenA} and ${tokenB}`);
             throw new Error(`Pair does not exist on both DEXes for tokens: ${tokenA} and ${tokenB}`);
         }
-    
+
         console.log(`Pair exists on both Uniswap and Sushiswap for tokens: ${tokenA} and ${tokenB}`);
         return true;
 
-    }catch(e:any){
+    } catch (e: any) {
         console.error(`Error checking pair existence: ${e.message}`);
         throw e.message;
-
+    }
 }
-}
 
-
-
-
-export async function fetchLiquidity(tokenA: string, tokenB: string, nominalAmount: string, dexContract: ethers.Contract, dex :string): Promise<bigint | null> {
+export async function fetchLiquidity(
+    tokenA: string,
+    tokenB: string,
+    nominalAmount: string,
+    dexContract: ethers.Contract,
+    dex: string
+): Promise<bigint | null> {
     try {
-     
         const decimalsA = await getDecimals(tokenA);
         const amount = BigInt(nominalAmount) * BigInt(10) ** BigInt(decimalsA);
+
         let factoryContract;
         let pairAddress;
         let pairContract;
@@ -87,52 +89,64 @@ export async function fetchLiquidity(tokenA: string, tokenB: string, nominalAmou
 
         if (!dexContract.getAmountsOut) {
             console.error("getAmountsOut function is not available on the provided contract.");
-            return null; 
-        }
-
-
-        if(dex === 'uniswap'){
-            factoryContract = new ethers.Contract(UNISWAP_FACTORY_ADDRESS, FACTORY_ABI, provider);
-            pairAddress = await factoryContract.getPair(tokenA, tokenB);
-             pairContract = new ethers.Contract(pairAddress, PAIR_ABI, provider);
-             reserves = await pairContract.getReserves();
-             reserves0 = BigInt(reserves.reserve0);
-             reserves1 = BigInt(reserves.reserve1);
-            console.log("------------------------UNISWAP RESERVE------------------------")
-            console.log('reserve0 of tokenA',ethers.formatUnits(reserves0, 'ether'));
-            console.log('reserve1 of TokenB',ethers.formatUnits(reserves1, 'ether'));
-        }else
-        {
-            factoryContract = new ethers.Contract(SUSHISWAP_FACTORY_ADDRESS, FACTORY_ABI, provider);
-             pairAddress = await factoryContract.getPair(tokenA, tokenB);
-             pairContract = new ethers.Contract(pairAddress, PAIR_ABI, provider);
-             reserves = await pairContract.getReserves();
-            reserves0 = BigInt(reserves.reserve0);
-             reserves1 = BigInt(reserves.reserve1);
-            console.log("------------------------SUSHISWAP RESERVE------------------------")
-            console.log('reserve0 of tokenA',ethers.formatUnits(reserves0, 'ether'));
-            console.log('reserve1 of TokenB',ethers.formatUnits(reserves1, 'ether'));
-  
-        }
-        // Determine the correct order of reserves
-        const [tokenAReserve, tokenBReserve] = tokenA < tokenB ? [reserves0, reserves1] : [reserves1, reserves0];
-        // Check if reserves are sufficient
-        if (tokenAReserve < amount || tokenBReserve < amount) {
-            console.error("Insufficient liquidity for this trade.");
             return null;
         }
+
+        if (dex === 'uniswap') {
+            factoryContract = new ethers.Contract(UNISWAP_FACTORY_ADDRESS, FACTORY_ABI, provider);
+        } else {
+            factoryContract = new ethers.Contract(SUSHISWAP_FACTORY_ADDRESS, FACTORY_ABI, provider);
+        }
+
+        // Ensure correct token order for the pair address
+        const [token0, token1] = tokenA.toLowerCase() < tokenB.toLowerCase() ? [tokenA, tokenB] : [tokenB, tokenA];
+
+        pairAddress = await factoryContract.getPair(token0, token1);
+        console.log(`-----------------------------------------------------`)
+        console.log(`Pair address for ${tokenA}-${tokenB} on ${dex}: ${pairAddress}`);
+        console.log(`-----------------------------------------------------`)
+        if (pairAddress === "0x") {
+            console.error(`Pair ${tokenA}-${tokenB} does not exist on ${dex}.`);
+            return null;
+        }
+
+        pairContract = new ethers.Contract(pairAddress, PAIR_ABI, provider);
+        reserves = await pairContract.getReserves();
+        reserves0 = BigInt(reserves.reserve0);
+        reserves1 = BigInt(reserves.reserve1);
+
+
+
+        console.log(`------------------------${dex.toUpperCase()} RESERVE------------------------`);
+        console.log('reserve0 of token0', ethers.formatUnits(reserves0, 'ether'));
+        console.log('reserve1 of token1', ethers.formatUnits(reserves1, 'ether'));
+
+        // // Determine the correct order of reserves
+        // const [tokenAReserve, tokenBReserve] = tokenA.toLowerCase() < tokenB.toLowerCase() ? [reserves0, reserves1] : [reserves1, reserves0];
+
+        // // Check if reserves are sufficient
+        // console.log(`Checking liquidity for ${ethers.formatUnits(amount, 'ether')} ${tokenA} on ${dex}...`);
+        // console.log(ethers.formatUnits(amount, 'ether'), 'amount');
+
+        // if (reserves0 < amount) {
+        //     console.error("Insufficient liquidity for this trade.");
+        //     return null;
+        // }
+
         const amountsOut = await dexContract.getAmountsOut(amount, [tokenA, tokenB]);
         if (amountsOut && amountsOut.length > 1 && amountsOut[1] > BigInt(0)) {
             return amountsOut[1];
         } else {
             console.error(`No liquidity available for token pair: ${tokenA} - ${tokenB}`);
-            return null; 
+            return null;
         }
-    } catch (error:any) {
-        console.error(`Error fetching liquidity from dex: ${error.message}`);
-        return null; 
+    } catch (error: any) {
+        console.error(`Error fetching liquidity from ${dex}: ${error.message}`);
+        return null;
     }
 }
+
+
 
 
 
@@ -192,6 +206,9 @@ export async function calculateArbitrageProfit(
         console.log("****************************************");
         console.log("Calculating Arbitrage Opportunity Profit");
 
+        console.log(`Amount out Uniswap: ${ethers.formatUnits(amountOutUniswap, 'ether')} ETH`);
+        console.log(`Amount out Sushiswap: ${ethers.formatUnits(amountOutSushiswap, 'ether')} ETH`);
+
         // Constants
         const flashLoanFeeRate: bigint = 9n; // 0.09% expressed as 0.09 * 100 to avoid floating point operations
         const basisPoint: bigint = 10000n; // Basis points conversion factor
@@ -199,7 +216,7 @@ export async function calculateArbitrageProfit(
         // Calculate the flash loan fee
         const flashLoanFee: bigint = loanAmount * flashLoanFeeRate / basisPoint;
 
-        console.log(`Flash loan fee: ${ethers.formatUnits(flashLoanFee, 'ether')} ETH`);
+        console.log(`Flash loan fee: ${flashLoanFee} ETH`);
 
         // Gas and slippage calculations
         const feeData = await provider.getFeeData();

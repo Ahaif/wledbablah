@@ -5,7 +5,7 @@ import {CONTRAT_ADDRESS, TOKENS} from '../src/constants';
 dotenv.config();
 
 
-const DaiHolderAddress = "0x6FF8E4DB500cBd77d1D181B8908E022E29e0Ec4A"
+const DaiHolderAddress = "0x786F7f37095697221a09F2B2eb82657beaFde435"
 const UsdtHolderAddress = `0xa7C0D36c4698981FAb42a7d8c783674c6Fe2592d`
 const UsdcHolderAddress = `0xDFd5293D8e347dFe59E90eFd55b2956a1343963d`
 const stETHHolderAddress = `0x02eD4a07431Bcc26c5519EbF8473Ee221F26Da8b`
@@ -34,7 +34,7 @@ async function fundHolderWithETH(daiHolderAddress: string, ethAmount: string) {
 
 async function fundContract(tokenAddress, tokenHolderAddress, amount, contractAddress) {
     try {
-        // await fundHolderWithETH(tokenHolderAddress, "1"); // Ensure the holder has ETH for gas
+        await fundHolderWithETH(tokenHolderAddress, "1"); // Ensure the holder has ETH for gas
         await network.provider.request({
             method: "hardhat_impersonateAccount",
             params: [tokenHolderAddress]
